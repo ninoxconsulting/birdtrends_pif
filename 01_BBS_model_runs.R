@@ -16,8 +16,24 @@ species_forms
 # write these out as species lists 
 all_species_bbs_database <- load_bbs_data()$species
 
-write_csv(all_species_bbs_database, "sp_key_bbs.csv")
+#write_csv(all_species_bbs_database, "sp_key_bbs.csv")
 
+sp <- read.csv("sp_key_bbs.csv")
+
+codes <- read.csv("01_raw_data/sp_list.csv")
+codes <- codes |> 
+  rename("english" = species) |> 
+  select(-pic_class)
+
+write_csv(all_species_bbs_database, "sp_key_bbs_full.csv")
+
+
+library(dplyr)
+library(readr)
+
+sp1 <- left_join(sp, codes)
+
+write_csv(sp1, "sp_key_bbs_full.csv")
 
 
 
