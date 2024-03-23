@@ -278,7 +278,7 @@ bbs_smooth <- smooths[1,]
 
 for (i in 1:nrow(inds_samples_con)){
   
-  #  i = 1
+    i = 1
   
   i_dat <- data.frame(log_y = log(inds_samples_con[i,]),Year = year_seq) 
   
