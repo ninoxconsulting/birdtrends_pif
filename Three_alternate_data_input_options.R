@@ -35,7 +35,7 @@ input_option_1 <- inds$indices %>%
   filter(region == "Canada") %>% 
   select(year, index, index_q_0.025,index_q_0.975)
 
-saveRDS(input_option_1, file = file.path("data", "input_data1.rds"))
+#saveRDS(input_option_1, file = file.path("data", "input_data1.rds"))
 
 
 # Input option 2 - matrix of posterior draws (rows) for each year (columns)
