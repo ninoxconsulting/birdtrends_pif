@@ -292,6 +292,8 @@ for (i in 1:nrow(inds_samples_con)){
   gam_preds[i,ncol(gam_preds)] <- i 
   
   
+  i = 1
+  
   bbs_smooth[i,1:(ncol(bbs_smooth)-1)] <- t(indsmooth_samples_con[i,]) 
   bbs_smooth[i,ncol(bbs_smooth)] <- i 
   
