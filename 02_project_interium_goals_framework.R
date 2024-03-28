@@ -43,12 +43,12 @@ project <- function(
   # TESTING 
   
   model = fit
-  year_goals_are_set = 2016
+  year_goals_are_set = 2014
   target_trend = 3
   years_to_target_trend = 2046
   annual_growth_rate_improvement = NULL
   end_of_projection = 2056
-  baseline_years = seq(2000,2010)
+  baseline_years = seq(2014,2022)
   length_current_trend = 10
   
   # END TESTING 
@@ -81,7 +81,7 @@ project <- function(
   # Loop through samples from posterior
   for (i in 1:nrow(indicies)){
     
-    #i = 1
+   # i = 1
     
     # ---------------------------------------------
     # Extract estimated historical dynamics from bbs fit
@@ -127,14 +127,14 @@ project <- function(
     trend_log <- mean(diff(i_dat_for_trend$gam_pred))
     trend_percent <- 100*(exp(trend_log)-1) # Convert to percent change per year
     
-    trendlls_log <- lm(gam_pred ~ Year, data = i_dat)
-    trendlls_log <- as.numeric(trendlls_log$coefficients[2])
-    trendlls_percent <- 100*(exp(trendlls_log)-1)
+    #trendlls_log <- lm(gam_pred ~ Year, data = i_dat)
+    #trendlls_log <- as.numeric(trendlls_log$coefficients[2])
+    #trendlls_percent <- 100*(exp(trendlls_log)-1)
     
     
     # Save estimate of trend for this sample from posterior
     Trend_samples <- c(Trend_samples,trend_percent )
-    Trend_samplesv2 <- c(Trend_samplesv2,trendlls_percent)
+    #Trend_samplesv2 <- c(Trend_samplesv2,trendlls_percent)
     # ---------------------------------------------
     # Conduct future projections under two scenarios:
     #    1) status quo / business as usual
@@ -159,12 +159,12 @@ project <- function(
     
     # Fill in StatusQuo and Recovery columns (may not be necessary, but just seems more statisfying to have these filled instead of NA)
     projection_i$y_StatusQuo[1] <- projection_i$y_gam[1]
-    projection_i$y_StatusQuov2[1] <- projection_i$y_gam[1]
+   # projection_i$y_StatusQuov2[1] <- projection_i$y_gam[1]
     projection_i$y_Recovery[1] <- projection_i$y_gam[1]
     
     for (y in seq((min(projection_i$Year)+1),year_goals_are_set)){
       projection_i$y_StatusQuo[projection_i$Year == y] <- projection_i$y_StatusQuo[projection_i$Year == (y-1)] *  exp(trend_log)
-      projection_i$y_StatusQuov2[projection_i$Year == y] <- projection_i$y_StatusQuov2[projection_i$Year == (y-1)] *  exp(trendlls_log)
+      #projection_i$y_StatusQuov2[projection_i$Year == y] <- projection_i$y_StatusQuov2[projection_i$Year == (y-1)] *  exp(trendlls_log)
       projection_i$y_Recovery[projection_i$Year == y] <- projection_i$y_Recovery[projection_i$Year == (y-1)] *  exp(trend_log)
     }
     
@@ -172,8 +172,9 @@ project <- function(
     # Project the StatusQuo scenario into the future, at same rate of change
     # **********************
     
-    for (y in seq(year_goals_are_set+1,end_of_projection)) projection_i$y_StatusQuo[projection_i$Year == y] <- projection_i$y_StatusQuo[projection_i$Year == (y-1)] *  exp(trend_log)
-    for (y in seq(year_goals_are_set+1,end_of_projection)) projection_i$y_StatusQuov2[projection_i$Year == y] <- projection_i$y_StatusQuov2[projection_i$Year == (y-1)] *  exp(trendlls_log)
+    for (y in seq(year_goals_are_set+1,end_of_projection)) 
+      projection_i$y_StatusQuo[projection_i$Year == y] <- projection_i$y_StatusQuo[projection_i$Year == (y-1)] *  exp(trend_log)
+    #for (y in seq(year_goals_are_set+1,end_of_projection)) projection_i$y_StatusQuov2[projection_i$Year == y] <- projection_i$y_StatusQuov2[projection_i$Year == (y-1)] *  exp(trendlls_log)
     
     # **********************
     # Project a recovery scenario into the future
@@ -183,7 +184,9 @@ project <- function(
     if (trend_percent > target_trend) trend_percent <- target_trend 
     
     # Sequence of annual growth rates if recovery scenario is defined based on "years until target trend is achieved"
-    if (!is.null(years_to_target_trend)) trend_seq <- c(seq(trend_percent,target_trend,length.out = years_to_target_trend+1),rep(target_trend,1000)) # adds a bunch of extra years just to ensure we project far enough; these get trimmed off later
+    if (!is.null(years_to_target_trend)) 
+      
+      trend_seq <- c(seq(trend_percent,target_trend,length.out = years_to_target_trend+1),rep(target_trend,1000)) # adds a bunch of extra years just to ensure we project far enough; these get trimmed off later
     
     # Sequence of annual growth rates if recovery scenario is defined based on annual increments in growth rate
     if (!is.null(annual_growth_rate_improvement)) trend_seq <- c(seq(trend_percent,target_trend,annual_growth_rate_improvement),rep(target_trend,1000)) # adds a bunch of extra years just to ensure we project far enough; these get trimmed off later
@@ -202,8 +205,8 @@ project <- function(
     
     # Store annual indices under each projection, for this sample from the posterior 
     indices_StatusQuo[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_StatusQuo
-    indices_StatusQuov2[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_StatusQuov2
-    indices_Recovery[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_Recovery
+    #indices_StatusQuov2[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_StatusQuov2
+   # indices_Recovery[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_Recovery
     indices_gam[i,1:length(i_dat$gam_pred)] <- exp(i_dat$gam_pred)
     
   }
@@ -220,7 +223,7 @@ project <- function(
   
   indices_gam <- round(indices_gam,3)
   indices_StatusQuo <- round(indices_StatusQuo,3)
-  indices_StatusQuov2 <- round(indices_StatusQuov2,3)
+  #indices_StatusQuov2 <- round(indices_StatusQuov2,3)
   indices_Recovery <- round(indices_Recovery,3)
   
   # ----------------------------------------------------
@@ -240,6 +243,7 @@ project <- function(
   # ----------------------------------------------------
   
   status_year_number <- which(year_seq_projection == final_year_of_data)
+  
   
   Prob_Exceed_StatusQuo <- 100*mean(indices_gam[,status_year_number] > indices_StatusQuo[,status_year_number]) %>% round(3)
   Prob_Exceed_Recovery <- 100*mean(indices_gam[,status_year_number] > indices_Recovery[,status_year_number]) %>% round(3)
@@ -282,16 +286,16 @@ project <- function(
               StatusQuo_q_0.025 = quantile(StatusQuo,0.025, na.rm = TRUE),
               StatusQuo_q_0.975 = quantile(StatusQuo,0.975, na.rm = TRUE))
   
-  
-  # Credible intervals on status quo projection
-  StatusQuov2_summary <- reshape2::melt(indices_StatusQuov2) %>%
-    rename(samp = Var1, year_number = Var2, StatusQuo = value) %>%
-    mutate(Year = year_seq_projection[year_number]) %>%
-    group_by(Year) %>%
-    summarize(StatusQuov2_med = median(StatusQuo),
-              StatusQuov2_q_0.025 = quantile(StatusQuo,0.025, na.rm = TRUE),
-              StatusQuov2_q_0.975 = quantile(StatusQuo,0.975, na.rm = TRUE))
-  
+  # 
+  # # Credible intervals on status quo projection
+  # StatusQuov2_summary <- reshape2::melt(indices_StatusQuov2) %>%
+  #   rename(samp = Var1, year_number = Var2, StatusQuo = value) %>%
+  #   mutate(Year = year_seq_projection[year_number]) %>%
+  #   group_by(Year) %>%
+  #   summarize(StatusQuov2_med = median(StatusQuo),
+  #             StatusQuov2_q_0.025 = quantile(StatusQuo,0.025, na.rm = TRUE),
+  #             StatusQuov2_q_0.975 = quantile(StatusQuo,0.975, na.rm = TRUE))
+  # 
   
   
   
@@ -358,9 +362,9 @@ project <- function(
     Trend_q0.025 = quantile(Trend_samples,0.025),
     Trend_q0.500 = quantile(Trend_samples,0.500),
     Trend_q0.975 = quantile(Trend_samples,0.975),
-    Trend2_q0.025 = quantile(Trend_samplesv2,0.025),
-    Trend2_q0.500 = quantile(Trend_samplesv2,0.500),
-    Trend2_q0.975 = quantile(Trend_samplesv2,0.975),
+    #Trend2_q0.025 = quantile(Trend_samplesv2,0.025),
+    #Trend2_q0.500 = quantile(Trend_samplesv2,0.500),
+    #Trend2_q0.975 = quantile(Trend_samplesv2,0.975),
     
     # Current status of the population (as of last survey)
     Current_Prob_Exceed_StatusQuo = Prob_Exceed_StatusQuo,
@@ -485,16 +489,16 @@ sp_plot_index <- ggplot() +
   geom_line(data = gam_summary, aes(x = Year, y = gam_med), col = "gray50", linewidth = 1)+
   
   # Historical "trend" line
-  geom_ribbon(data = subset(StatusQuo_summary, Year <= year_goals_are_set), aes(x = Year, ymin = StatusQuo_q_0.025, ymax = StatusQuo_q_0.975), alpha = 0.2, fill = "black")+
-  geom_line(data = subset(StatusQuo_summary, Year <= year_goals_are_set), aes(x = Year, y = StatusQuo_med), col = "black", linewidth = 1)+
+ # geom_ribbon(data = subset(StatusQuo_summary, Year <= year_goals_are_set), aes(x = Year, ymin = StatusQuo_q_0.025, ymax = StatusQuo_q_0.975), alpha = 0.2, fill = "black")+
+ # geom_line(data = subset(StatusQuo_summary, Year <= year_goals_are_set), aes(x = Year, y = StatusQuo_med), col = "black", linewidth = 1)+
   
   # Status quo projection
   geom_ribbon(data = subset(StatusQuo_summary, Year >= year_goals_are_set), aes(x = Year, ymin = StatusQuo_q_0.025, ymax = StatusQuo_q_0.975), alpha = 0.2, fill = "orangered")+
-  geom_line(data = subset(StatusQuo_summary, Year >= year_goals_are_set), aes(x = Year, y = StatusQuo_med), col = "orangered", linewidth = 1)+
-  
+  geom_line(data = subset(StatusQuo_summary, Year >= year_goals_are_set), aes(x = Year, y = StatusQuo_med), col = "orangered", linewidth = 1)#+
+ ## 
   # Status quo projection
-  geom_ribbon(data = subset(StatusQuov2_summary, Year >= year_goals_are_set), aes(x = Year, ymin = StatusQuov2_q_0.025, ymax = StatusQuov2_q_0.975), alpha = 0.2, fill = "darkgreen")+
-  geom_line(data = subset(StatusQuov2_summary, Year >= year_goals_are_set), aes(x = Year, y = StatusQuov2_med), col = "darkgreen", linewidth = 1)+
+ # geom_ribbon(data = subset(StatusQuov2_summary, Year >= year_goals_are_set), aes(x = Year, ymin = StatusQuov2_q_0.025, ymax = StatusQuov2_q_0.975), alpha = 0.2, fill = "darkgreen")+
+#  geom_line(data = subset(StatusQuov2_summary, Year >= year_goals_are_set), aes(x = Year, y = StatusQuov2_med), col = "darkgreen", linewidth = 1)+
   
   
   

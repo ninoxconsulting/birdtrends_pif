@@ -175,42 +175,109 @@ comp_plot <- ggplot2::ggplot(data = sel_hgams,
   
   # convert data to long form? 
   
-  ldf <-tibble::rowid_to_column(fitted_smooths, "draw") %>%
+  ldf <- tibble::rowid_to_column(fitted_smooths, "draw") %>%
     tidyr::pivot_longer(., cols = !starts_with("d")) %>%
     dplyr::rename('year' = name, "proj_y" = value)%>%
-    mutate(year = as.integer(year),
-           log_proj_y = log(proj_y))
+    mutate(year = as.integer(year))
   
   
-  trend <- function(proj_data, start_yr = NA, end_yr = NA, method = "geomean"){
+  trend <- function(proj_data, 
+                    start_yr = 2014, 
+                    end_yr = 2022, 
+                    proj_yr = 2046,
+                    method = "geomean"){
     
     # testing 
-    proj_data <-ldf 
+    proj_data <- ldf 
+    start_yr = 2014
+    end_yr = 2022
+    proj_yr = 2046
+    
     
     if(is.na(start_yr)){start_yr = min(proj_data$year)}
-    
     if(is.na(end_yr)){end_yr = max(proj_data$year)}
-    
+  
     
     trend_dat <- subset(proj_data, year %in% seq(start_yr, end_yr))
     
+    pred_dat <- proj_data  
     
     
-      if(method == "geomean") {
+    
+    #if(method == "geomean") {
       
       #i_dat_for_trend <- subset(i_dat, Year %in% seq(year_goals_are_set,year_goals_are_set - length_current_trend))
       #trend_log <- mean(diff(i_dat_for_trend$gam_pred))
       #trend_percent <- 100*(exp(trend_log)-1) # Convert to percent change per year
       
+      
+      # estimate the trend based on the years of selection for each draw
+      
+      trend_sum <- trend_dat %>%
+        group_by(draw) %>%
+        summarise(trend_log = mean(diff(log(proj_y))))# %>%
+        #mutate(perc_trend = 100*(exp(trend_log)-1))
     
-    trend_sum <- trend_dat %>%
-      group_by(draw) %>%
-      summarise(trend_log = mean(diff(proj_y)),
-                trend_loglog = mean(diff(log_proj_y)))%>%
-      mutate(perc_trend = 100*(exp(trend_log)-1),
-             perc_trendlog = 100*(exp(trend_loglog)-1))
-    
+      
+      preds <- foreach::foreach(i = names(out), .combine = rbind)%do%{
+        # testing line
+        #i = names(out)[1]
+        
+        i_dat <- data.frame(log_y = as.vector(unlist(out[i])), Year = year_seq)
+        
+        gam <- gam(log_y~s(Year, k = n_knots, bs = "tp"),
+                   data = i_dat) ## or
+        
+        #gam <- gam(log_y~s(year, bs = 'cs', k = length(knots)),
+        #           knots = list(Year = knots),
+        #           data = i_dat)
+        
+        
+        i_dat$gam_pred <- stats::predict(gam, newdata = i_dat)
+        predvals <- exp(i_dat$gam_pred)
+        
+     
+        
+      }
+      
   
+      for( i in trend_sum$draw){
+        
+         i  = trend_sum$draw[1]
+        
+        trend_draw <- trend_sum %>% filter(draw == i) %>% pull(trend_log)
+        
+        proj_draw <- proj_data %>% filter(draw == i) 
+        
+        proj_draw <-  proj_draw %>%
+           complete(year = seq(min(proj_data$year), max(proj_yr), 1)) %>%
+           mutate(draw = i) %>%
+           mutate(pred_ind = proj_y) 
+        
+      #   
+      # # historic trend
+      # for (y in seq((min(proj_draw$year)+1),start_yr)){
+      #   #y = 1969
+      #     proj_draw$pred_ind[proj_draw$year == y] <- proj_draw$pred_ind[proj_draw$year == (y-1)] *exp(trend_draw)
+      #      }
+      
+        
+        
+        
+      #  calculate future projections starting in year of goal
+
+      for (y in seq(end_yr+1,proj_yr)) {
+        proj_draw$pred_ind[proj_draw$year == y] <- proj_draw$pred_ind[proj_draw$year == (y-1)] *exp(trend_draw)
+      }
+       
+      #
+    
+    
+      trend_sum <- trend_sum %>% filter(draw == 1)
+      
+      
+      
+      
     
     
         } ifelse(method == "lm"){
