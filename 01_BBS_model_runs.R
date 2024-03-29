@@ -125,3 +125,6 @@ s <- stratify(by = "bbs_usgs", species="Scissor-tailed Flycatcher")
 #>   Renaming routes...
 p <- prepare_data(s)
 
+
+
+STFL_gamye_spatial <- readRDS("output/4430_gamye_spatial.rds")
