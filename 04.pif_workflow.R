@@ -1,6 +1,6 @@
 # PIF workflow using birdtrends
 
-#devtools::install_github("ninoxconsulting/birdtrends")
+devtools::install_github("ninoxconsulting/birdtrends")
 library(mgcv)
 library(tidyverse)
 library(birdtrends)
@@ -26,7 +26,7 @@ indsmooth <- generate_indices(fit,regions = "country",
 plot_indices(inds)
 
 ttemp <- generate_trends(indsmooth)
-aa <- ttemp$trends
+#aa <- ttemp$trends
 
 
 # Input option 1 - annual indices of relative abundance with CI estimates
@@ -64,7 +64,10 @@ input_option_3 <- indsmooth$samples$country_Canada
 
 
 
+
+###########################################
 # 2. Generate trends for each data set 
+###########################################
 
 
 # data option 1: annual indices
@@ -75,7 +78,7 @@ indat1 <- input_option_1
 
 fitted_data <- fit_hgam(indat1, start_yr = NA, end_yr = NA, n_knots = 5)
 
-
+# plot the datasets 
 sel_hgams <- fitted_data %>%
   dplyr::slice_sample(., n = 100) %>%  
   dplyr::mutate(draw = seq(1, 100, 1)) %>% 
@@ -102,9 +105,7 @@ comp_plot <- ggplot2::ggplot(data = sel_hgams,
   comp_plot
 
 
-
-  
-  # data option 2: GAm posterior draw from BBS model 
+# data option 2: GAm posterior draw from BBS model 
   
   indat2 <- input_option_2
   
@@ -178,8 +179,14 @@ comp_plot <- ggplot2::ggplot(data = sel_hgams,
   
   
   
-  ######################################################################
-  # calculate trend 
+######################################################################
+  # 3. calculate trend 
+##########################################################
+  
+  ldf_hgam <- tibble::rowid_to_column(fitted_data, "draw") %>%
+    tidyr::pivot_longer(., cols = !starts_with("d")) %>%
+    dplyr::rename('year' = name, "proj_y" = value)%>%
+    mutate(year = as.integer(year))
   
   # convert data to long form? 
   
@@ -198,114 +205,38 @@ comp_plot <- ggplot2::ggplot(data = sel_hgams,
   
   
   
+trend_hgam <- get_trend(ldf_hgam, start_yr = 2014, end_yr = 2022, method = "gmean")
+trend_sm <- get_trend(ldf_smooths, start_yr = 2014, end_yr = 2022, method = "gmean")
+trend_gam <- get_trend(ldf_gams, start_yr = 2014, end_yr = 2022, method = "gmean")
+
+#trend_sm <- get_trend(ldf_smooths, start_yr = 2014, end_yr = 2022, method = "lm")
+  
   
   
 
-  
-  predict_trend <- function(proj_data, 
-                    start_yr = NA, 
-                    end_yr = NA, 
-                    proj_yr = 2046){
-                    #method = "geomean"
-                  
-  #   # testing 
-  # proj_data <- ldf
-  #  start_yr = NA
-  #  end_yr = 2022
-  #  proj_yr = 2046
 
-    
-    if(is.na(start_yr)){start_yr = min(proj_data$year)}
-    if(is.na(end_yr)){end_yr = max(proj_data$year)}
-  
-    #proj_start_yr = end_yr + 1
-    #proj_seq <- seq(proj_start_yr, proj_yr)
-    
-    trend_dat <- subset(proj_data, year %in% seq(start_yr, end_yr))
-  
-    
-   # if(method == "geomean") {
-      
-      
-      # estimate the trend based on the years of selection for each draw
-      
-      trend_sum <- trend_dat %>%
-        group_by(draw) %>%
-        summarise(trend_log = mean(diff(log(proj_y)))) %>%
-        mutate(perc_trend = 100*(exp(trend_log)-1))
+######################################################################
+# 4. predict trend 
+##########################################################
 
-      
-    #  }  else if (method == "lm"){
-    
-    # method for lm 
-    
-    #trendlls_log <- lm(gam_pred ~ Year, data = i_dat)
-    #trendlls_log <- as.numeric(trendlls_log$coefficients[2])
-    #trendlls_percent <- 100*(exp(trendlls_log)-1)
-    
-   #   }
-  #unnest()
-      pred_out <- proj_data[1,]%>% mutate(pred_ind = 0)
-      
-      
-      for( i in trend_sum$draw){
-        
-        print(i)
-        
-         #i  = trend_sum$draw[2]
-        
-        trend_draw <- trend_sum %>% filter(draw == i) %>% pull(trend_log)
-        
-        proj_draw <- proj_data %>% filter(draw == i) 
-        
-        
-        # not sure where to cut of projections here: 
-        #ie build trend from project from 2014 - 2022
-        # project to 2024 
-        # project to 2046
-        
-        proj_draw <- proj_draw %>%
-           complete(year = seq(end_yr, max(proj_yr), 1)) %>%
-           mutate(draw = i) %>%
-           #filter(year >= proj_start_yr)
-           mutate(pred_ind = proj_y)%>%
-           arrange(year)
-        
-      #  calculate future projections starting in year of goal
+preds_hgam <- predict_trend(ldf_hgam, trend_hgam, start_yr = 2023, proj_yr = 2050)
+preds_sm   <- predict_trend(ldf_smooths, trend_sm, start_yr = 2023, proj_yr = 2050)
+preds_gams <- predict_trend(ldf_gams, trend_gam,start_yr = 2023, proj_yr = 2050)
 
-      for (y in seq(end_yr + 1, proj_yr)) {
-        proj_draw$pred_ind[proj_draw$year == y] <- proj_draw$pred_ind[proj_draw$year == (y-1)] *exp(trend_draw)
-      }
   
-        pred_out <- bind_rows(pred_out, proj_draw)
-      #return(proj_draw)
-    
-      }
-      pred_out <- pred_out[-1,]
-      
-      return(pred_out)
-    
-    } # end of function
-  
- 
-  
-  
-  
-  preds_sm <- predict_trend(ldf_smooths, start_yr = 2014, end_yr = 2022, proj_yr = 2050)
-  
-  preds_gams <- predict_trend(ldf_gams, start_yr = 2014, end_yr = 2022, proj_yr = 2050)
-  
-  
-  ## summary of indices 
-  
-  
+
+
+
+## UP TO HERE 
+
+
   # ----------------------------------------------------
   # Summarize indices each year
   # ----------------------------------------------------
 
-  trend_plot <- function(raw_indices = input_option_1, 
+  trend_plot <- function(raw_indices = indat1, 
                          model_indices = ldf, 
-                         pred_indices = pred_out,
+                         pred_indices =  preds_sm ,
                          start_yr = 2014, 
                          end_yr = 2022){
   

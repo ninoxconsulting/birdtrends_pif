@@ -258,7 +258,7 @@ project <- function(
   
   for (j in 1:ncol(percent_of_Baseline_StatusQuo)){
     percent_of_Baseline_StatusQuo[,j] <- 100* percent_of_Baseline_StatusQuo[,j]/Index_baseline
-    percent_of_Baseline_Recovery[,j] <- 100* percent_of_Baseline_Recovery[,j]/Index_baseline
+    #percent_of_Baseline_Recovery[,j] <- 100* percent_of_Baseline_Recovery[,j]/Index_baseline
   }
   
   percent_of_Baseline_Obs <- indicies
