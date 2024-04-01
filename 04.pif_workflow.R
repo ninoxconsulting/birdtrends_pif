@@ -347,7 +347,6 @@ gam_plot <- trend_plot(raw_indices = input_option_1,
  #  
  #  
  #  
- 
  #  
  #  indices <- input_option_3
  #  min_year = NULL
