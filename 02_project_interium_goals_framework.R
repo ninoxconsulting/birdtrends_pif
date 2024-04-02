@@ -81,7 +81,7 @@ project <- function(
   # Loop through samples from posterior
   for (i in 1:nrow(indicies)){
     
-   # i = 1
+    i = 1
     
     # ---------------------------------------------
     # Extract estimated historical dynamics from bbs fit
@@ -110,11 +110,17 @@ project <- function(
     i_dat$gam_pred <- predict(gam, newdata = i_dat)
     indices_gam[i,1:length(i_dat$gam_pred)] <- exp(i_dat$gam_pred)
     
+    
+    # note indicies are not logged values... 
+    
     # ---------------------------------------------
     # Estimate baseline abundance as average across relevant years
     # ---------------------------------------------
     
+    # this is the average (unlogged value based on years of interest)
     Index_baseline[i] <- mean(exp(i_dat$gam_pred[i_dat$Year %in% baseline_years])) 
+    
+    
     
     # ---------------------------------------------
     # Trend estimate as as the geometric mean annual growth rate (mean of annual differences in log-scale indices)
