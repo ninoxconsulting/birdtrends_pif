@@ -34,7 +34,6 @@ pifs_sp <- pifs |>
 
 
 
-
 # 1. check if file is on google drive 
 
 # get list of id files in shared google drive: 
