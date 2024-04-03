@@ -18,42 +18,66 @@ library(janitor)
 
 
 
-pifs <- read.csv("sp_key_bbs_full.csv") %>%
-  filter(pif_rank %in% c("d", "r", "red"))
-
-
+pifs <- read.csv("sp_key_bbs_full.csv") |> 
+  filter(pif_rank %in% c("d", "r", "red")) |> 
+  dplyr::select(aou, english, unid_combined, pif_rank, spcode,
+                st_pop_pc_lower, st_pop_pc_uppper,
+                st_antrend_pc_lower, st_antrend_pc_upper)
 
 #aou <- 4330
-#aou <- 2920
-aou <- 2930
+aou_id <- 2920
+#aou <- 2930
 
+pifs_sp <- pifs |> 
+  filter(aou %in% aou_id)
+  
+
+
+
+
+# 1. check if file is on google drive 
 
 # get list of id files in shared google drive: 
-
 bfiles <- drive_ls(as_id("1AwjONN_eTZP-IXmzKItjyYKS_NTA1psV"))
 
+bname <- paste0("fit_",aou_id,".rds")
 
-bboi <- bfiles %>%
-filter(name %in% paste0("fit_",aou,".rds"))
+if(bname %in% bfiles$name){
+  print("bbs model present")
+} else {
+  print("no bbs model present")
+  
+}
+
+# check if thefile is downloaded
 
 
-# select the first file and download a local copy
+dlfiles <- list.files(path = "fitted_models")
 
-# this example is for the first bird: 
-bboi$id[1]
+if(bname %in% dlfiles){
+  print("file already downloaded")
+} else {
+  print("downloading file - hang tight")
+  
+  # select the first file and download a local copy
+  
+  bboi <- bfiles %>%
+    filter(name %in% bname)
+  
+  drive_download(as_id(bboi$id[1]), path = file.path("fitted_models", bboi$name[1]))
+  
+}
 
-drive_download(as_id(bboi$id[1]), path = file.path("fitted_models", bboi$name[1]))
+
 
 # read in file: 
 
 
 ## prepare data inputs : example 1 
 
-#aou <- 4370
-
 
 # loading the fitted model object
-fit <- readRDS(paste0("C:/r_repo/2024_ECCC_birdtrends/birdtrends_pif/fitted_models/fit_",aou,".rds"))
+fit <- readRDS(paste0("C:/r_repo/2024_ECCC_birdtrends/birdtrends_pif/fitted_models/fit_",aou_id,".rds"))
 
 
 # Generate indicies (data options 1 and 2)
@@ -286,8 +310,15 @@ cowplot::plot_grid(hgams_plot,gam_plot, smooth_plot, nrow = 3)
 
 
 
+###########################################
+# estimate the average trends percent
+
+trend_hgam_summary <- trend_hgam  %>%
+  summarize(annualpc_q_0.025 = quantile(perc_trend, 0.025),
+            annualpc = quantile(perc_trend,0.5),
+            annualpc_q_0.975 = quantile(perc_trend,0.975))
 
 
-
+pifs_sp
 
                
