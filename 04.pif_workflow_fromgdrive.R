@@ -17,6 +17,12 @@ library(janitor)
 # project-specific .Rprofile file to cache
 
 
+
+pifs <- read.csv("sp_key_bbs_full.csv") %>%
+  filter(pif_rank %in% c("d", "r", "red"))
+
+
+
 #aou <- 4330
 #aou <- 2920
 aou <- 2930
