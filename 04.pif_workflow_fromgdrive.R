@@ -3,6 +3,10 @@ library(googledrive)
 library(dplyr)
 library(readr)
 library(janitor)
+devtools::install_github("ninoxconsulting/birdtrends")
+library(bbsBayes2)
+library(birdtrends)
+
 
 
 # location of shared files: 
@@ -126,7 +130,7 @@ indat1 <- input_option_1
 
 # fit the Heirachial GAM model using all years: 
 
-fitted_data <- fit_hgam(indat1, start_yr = NA, end_yr = NA, n_knots = 14)
+fitted_data <- fit_hgam(indat1, start_yr = NA, end_yr = NA, n_knots = NA)
 
 # plot the datasets 
 sel_hgams <- fitted_data %>%
