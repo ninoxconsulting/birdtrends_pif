@@ -81,7 +81,7 @@ project <- function(
   # Loop through samples from posterior
   for (i in 1:nrow(indicies)){
     
-    i = 1
+    #i = 1
     
     # ---------------------------------------------
     # Extract estimated historical dynamics from bbs fit
