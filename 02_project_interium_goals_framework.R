@@ -31,9 +31,9 @@ fit <- readRDS(paste0("C:/r_repo/2024_ECCC_birdtrends/birdtrends_pif/fitted_mode
 
 project <- function(
     indices = NULL,
-    year_goals_are_set = 2022,# Year in which goals are set
+    year_goals_are_set = 2014,# Year in which goals are set
     target_trend = 3,    # Target rate of population change, once goal is achieved
-    years_to_target_trend = NULL, # Years until target growth rate is reached (leave as NULL if using annual_growth_rate_improvement)
+    years_to_target_trend = 2026, # Years until target growth rate is reached (leave as NULL if using annual_growth_rate_improvement)
     annual_growth_rate_improvement = NULL,# Annual improvement in population growth rate (leave as NULL if using years_to_target_trend)
     end_of_projection = 2100,  # Final year of projection
     baseline_years = seq(1980,1984),    # Years for calculating baseline population index (mean across these years)
@@ -44,7 +44,7 @@ project <- function(
   
   model = fit
   year_goals_are_set = 2014
-  target_trend = 3
+  target_trend = 25
   years_to_target_trend = 2046
   annual_growth_rate_improvement = NULL
   end_of_projection = 2056
@@ -139,7 +139,7 @@ project <- function(
     
     
     # Save estimate of trend for this sample from posterior
-    Trend_samples <- c(Trend_samples,trend_percent )
+    Trend_samples <- c(Trend_samples, trend_percent )
     #Trend_samplesv2 <- c(Trend_samplesv2,trendlls_percent)
     # ---------------------------------------------
     # Conduct future projections under two scenarios:
@@ -195,7 +195,7 @@ project <- function(
       trend_seq <- c(seq(trend_percent,target_trend,length.out = years_to_target_trend+1),rep(target_trend,1000)) # adds a bunch of extra years just to ensure we project far enough; these get trimmed off later
     
     # Sequence of annual growth rates if recovery scenario is defined based on annual increments in growth rate
-    if (!is.null(annual_growth_rate_improvement)) trend_seq <- c(seq(trend_percent,target_trend,annual_growth_rate_improvement),rep(target_trend,1000)) # adds a bunch of extra years just to ensure we project far enough; these get trimmed off later
+    # if (!is.null(annual_growth_rate_improvement)) trend_seq <- c(seq(trend_percent,target_trend,annual_growth_rate_improvement),rep(target_trend,1000)) # adds a bunch of extra years just to ensure we project far enough; these get trimmed off later
     
     # What years do we actually need to store?
     proj_years <- seq(year_goals_are_set,end_of_projection)
@@ -212,7 +212,7 @@ project <- function(
     # Store annual indices under each projection, for this sample from the posterior 
     indices_StatusQuo[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_StatusQuo
     #indices_StatusQuov2[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_StatusQuov2
-   # indices_Recovery[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_Recovery
+    indices_Recovery[i,which(year_seq_projection %in% projection_i$Year)] <- projection_i$y_Recovery
     indices_gam[i,1:length(i_dat$gam_pred)] <- exp(i_dat$gam_pred)
     
   }

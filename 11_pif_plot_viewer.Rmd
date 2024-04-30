@@ -1,0 +1,67 @@
+---
+title: "Partners in Flight Trends"
+author: "Gen Perkins"
+date: "2024-04-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+We estimated the trends for XX bird species identified on the "Watch List" under the 2016 PIF Land bird Conservation Plan. This included; 
+
+- Red watch list : Species with extremely high vulnerability due to small population and range, high threats, and range wide declines. Aim to recover these species. 
+
+- Yellow Watch List (R): Prevent Decline.  
+
+- Yellow Watch List (D): Reverse decline. 
+
+
+For each of the species, we used the modeled smooths drawn from the GAMYE model using outputs derived from the bbsBayes2 package . 
+
+The plots below represent the observed and predicted trends for each species using data obtained from the North American Breeding Bird survey on a continent wide distribution. 
+
+For each year, the observed indices and errow bars are shown in grey up to 2022. A modeled smooth line to estimate the overall fit is represented by a grey line with confidence interval a grey ribbon. 
+
+For each species a trend was determined using the estimated smooth line between 2014 and 2022. These dates were chosen to represent the trend from the date at which targets were determined to best available data. A solid grey vertical line is set to 2014. 
+
+This trend was then predicted into the future as defined by the red line with associated confidence intervals (orange ribbon) up to 2050. 
+
+Targets were determined for each species for both a short term (2026) and long term goals (2046), each denoted by a hashed grey line. For each of these time periods, blue error bars represents the target range for a given species. A linear blue line also represents an estimated trajectory in which birds could achieve these targets. Note this are basic linear representations 
+
+
+
+
+```{r cars, echo = FALSE}
+
+library(jpeg)
+
+files <- list.files(file.path("outputs"), recursive = T, pattern = "plot.rds")
+
+for(i in files){
+  
+  #i = files[2]
+  
+ aa <-  readRDS(file.path("outputs", i))
+ plot(aa)
+ 
+}
+
+```
+
+
+
+```{r acknowledgement, echo = FALSE}
+# 
+# Acknowledgments: 
+# 
+# - Adam Smith - running initial bird, statistical advice and draft review. 
+# - Becky Stewert - project guidance 
+# - Dave illes and Marcel - code developkment for collaborative projects. 
+# 
+# - Creators of bbsBayes package - code 
+
+```
+
