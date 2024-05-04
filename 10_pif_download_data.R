@@ -122,7 +122,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
- # i = aous[1]
+  #i = aous[1]
 
   aou_id <- i
   
@@ -281,38 +281,20 @@ for(i in aous){
       ########################################################
       
       # estimate the probability that the targets will be met
-      
-      
+  
       st_inc_dec <- targ %>% 
         select(contains("st_pop_pc")) %>%
-        tidyr::pivot_longer(everything())
-       
-      st_prob_dec = filter(st_inc_dec, value <0) %>% 
-        pull(value) * -1
+        tidyr::pivot_longer(everything())%>%
+        select(value) |> 
+        pull()
+    
       
-      if(length(st_prob_dec) == 0){st_prob_dec = NULL}
-      
-      st_prob_inc = filter(st_inc_dec, value >0) %>% 
-        pull(value)
-      
-      if(length(st_prob_inc) == 0){st_prob_inc = NULL}
-      
-      
-      # repeat for long term trends 
-      
+      # # repeat for long term trends 
       lt_inc_dec <- targ %>% 
         select(contains("lt_pop_pc")) %>%
-        tidyr::pivot_longer(everything())
-      
-      lt_prob_dec = filter(lt_inc_dec, value <0) %>% 
-        pull(value) * -1
-      
-      if(length(lt_prob_dec) == 0){lt_prob_dec = NULL}
-      
-      lt_prob_inc = filter(lt_inc_dec, value >0) %>% 
-        pull(value)
-      
-      if(length(lt_prob_inc) == 0){lt_prob_inc = NULL}
+        tidyr::pivot_longer(everything())%>%
+        select(value) |> 
+        pull()
       
       
       # note need to figure out a way to automate these plots 
@@ -321,18 +303,19 @@ for(i in aous){
       prob_st <- calculate_probs(predicted_trends = preds_sm,
                       ref_year = 2014, 
                       targ_year = 2026, 
-                      prob_decrease = st_prob_dec, 
-                      prob_increase = st_prob_inc  )
+                      prob_decrease = NULL, 
+                      prob_increase = st_inc_dec)
+      
       
       prob_lt <- calculate_probs(predicted_trends = preds_sm,
                                  ref_year = 2014, 
                                  targ_year = 2046, 
-                                 prob_decrease = lt_prob_dec, 
-                                 prob_increase = lt_prob_inc) 
+                                 prob_decrease = NULL, 
+                                 prob_increase = lt_inc_dec) 
       
     
       
-      outdata <- list(ldf_smooths, trend_sm, preds_sm,  targ, index_baseline, prob_st,prob_lt  )
+      outdata <- list(ldf_smooths, trend_sm, preds_sm,  targ, index_baseline, prob_st, prob_lt  )
       names(outdata)<- c("ldf_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "prob_st", "prob_lt")
       
       
