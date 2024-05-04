@@ -75,7 +75,7 @@ dlfiles <- list.files(path = "fitted_models")
 
 for(a in aous){
   
-  #a <- redaous[1]
+  a <- aous[10]
   
   aou_id <- a
   
@@ -122,7 +122,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  #i = aous[1]
+  i = aous[32]
 
   aou_id <- i
   
