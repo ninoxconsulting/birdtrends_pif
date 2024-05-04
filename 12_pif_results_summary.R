@@ -60,93 +60,52 @@ target_achieve <- left_join(target_achieve, pif_rank)
 
 # basic plot 
 
-ggplot(target_achieve, aes(y = st_lower_pc, x = as.factor(aou)), color = pif_rank)+
-  geom_point(aes(col = pif_rank)) + 
-  xlab("Date") + ylab("Tag") 
+#ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc))+
+#  geom_jitter(width = 1, aes(colour = pif_rank), size = 3) + scale_colour_viridis_d()
+
+ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
+  geom_point(aes(colour = pif_rank), alpha = 0.6, size = 2.5) + 
+  #geom_text(hjust=-0.2, vjust=0, colour = "darkgrey", size = 2.5)+
+  scale_colour_viridis_d()+
+  theme_bw()+ 
+  ylab("short term percentage") + 
+  xlab("long term percentage") +
+  geom_text_repel(size = 2, colour = "darkgrey",min.segment.length = 0, seed = 42, box.padding = 0.5)
+
+# ## summary of all the type. 
+# # convert values into Quartiles (
+# 1 = very low <25
+# 2 = low < 25 - 50
+# 3 = moderate - 50 - 75
+# 4 = high = 75 - 90
+# 5 = very high >99
+# 
+# 
+# 
+# sum <- target_achieve %>% 
+#   mutate(st_class = case_when(
+#     between(st_lower_pc, 0, 25.999)~ 1,
+#     between(st_lower_pc, 26, 50.999)~ 2,
+#     between(st_lower_pc, 51, 75.999)~ 3,
+#     between(st_lower_pc, 76, 90.999)~ 4,
+#     between(st_lower_pc, 91, 100)~ 5,
+#     TRUE ~ 0),
+#     lt_class = case_when(
+#       between(lt_lower_pc, 0, 25.999)~ 1,
+#       between(lt_lower_pc, 26, 50.999)~ 2,
+#       between(lt_lower_pc, 51, 75.999)~ 3,
+#       between(lt_lower_pc, 76, 90.999)~ 4,
+#       between(lt_lower_pc, 91, 100)~ 5,
+#       TRUE ~ 0)) |> 
+#   select(english, pif_rank, st_class,lt_class)%>% 
+#   arrange( pif_rank)
+#   
+#   
+# 
 
 
 
-## summary of all the type. 
-# convert values into Quartiles (
-1 = very low <25
-2 = low < 25 - 50
-3 = moderate - 50 - 75
-4 = high = 75 - 90
-5 = very high >99
-
-
-
-sum <- target_achieve %>% 
-  mutate(st_class = case_when(
-    between(st_lower_pc, 0, 25.999)~ 1,
-    between(st_lower_pc, 26, 50.999)~ 2,
-    between(st_lower_pc, 51, 75.999)~ 3,
-    between(st_lower_pc, 76, 90.999)~ 4,
-    between(st_lower_pc, 91, 100)~ 5,
-    TRUE ~ 0),
-    lt_class = case_when(
-      between(lt_lower_pc, 0, 25.999)~ 1,
-      between(lt_lower_pc, 26, 50.999)~ 2,
-      between(lt_lower_pc, 51, 75.999)~ 3,
-      between(lt_lower_pc, 76, 90.999)~ 4,
-      between(lt_lower_pc, 91, 100)~ 5,
-      TRUE ~ 0)) |> 
-  select(english, pif_rank, st_class,lt_class)%>% 
-  arrange( pif_rank)
-  
-    
-library(tidyverse)
-library(waffle)   
-library(ggtext)
-
-    
-p2 <- ggplot( sum, aes(values=st_class, fill=pif_rank))+
-  waffle::geom_waffle(
-    n_rows = 4,        # Number of squares in each row
-    color = "white",   # Border color
-    flip = TRUE, na.rm=TRUE
-  )+
-  facet_grid(~st_class)+
-  coord_equal()
-
-p2<-p2+
-  # Hide legend
-  guides(fill='none',color='none')+
-  # Add title and subtitle
-  #labs(title=title,subtitle=sub)+
-  theme(
-    # Enable markdown for title and subtitle
-    plot.title=element_markdown(),
-    plot.subtitle=element_markdown(),
-    # "Clean" facets 
-    panel.background=element_rect(fill="white"),
-    axis.title.y = element_blank(),
-    axis.text.y = element_blank(),
-    axis.ticks = element_blank(),
-    strip.background.x = element_rect(fill="white"),
-    strip.background.y = element_rect(fill="dimgrey"),
-    strip.text.y = element_text(color="white")
-  )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##########################
+##geom_histogram()##########################
 # Detailed plot data 
 ##########################
 
@@ -203,7 +162,7 @@ df_all <- all_dist  %>%
   
 
 df <- df_all %>% 
-  filter(pif_rank == "red")
+  filter(pif_rank == "d")
 
 
 p <- df %>%
