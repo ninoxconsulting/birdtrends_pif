@@ -23,7 +23,7 @@ library(ggplot2)
 # If this is different from your normal google auth email you can add this to a
 # project-specific .Rprofile file to cache
 
-outputs <- "outputs"
+outputs <- "02_outputs"
 
 pifs <- read.csv("sp_key_bbs_full.csv") |> 
   filter(pif_rank %in% c("d", "r", "red")) |> 
