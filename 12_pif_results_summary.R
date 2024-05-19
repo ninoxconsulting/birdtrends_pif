@@ -11,7 +11,7 @@ library(foreach)
 
 # read in the final plot data 
 
-outputs <- "outputs"
+outputs <- "02_outputs"
 
 pifs <- read.csv("sp_key_bbs_full.csv") |> 
   filter(pif_rank %in% c("d", "r", "red")) |> 
