@@ -14,14 +14,14 @@ We estimated the trends for 63 bird species identified on the "Watch List" under
 
 - Red watch list : Species with extremely high vulnerability due to small population and range, high threats, and range wide declines. Aim to recover these species (n = 12).
 
-- Yellow Watch List (R): Prevent Decline (n = 6) 
+- Yellow Watch List (R): Prevent Decline (n = 5) 
 
 - Yellow Watch List (D): Reverse decline (n = 45)
 
 
 For each of the species, we used best available data to estimate the trend and predict into the future. Input data types include: 
-1) modeled smooths drawn from the GAMYE model using outputs derived from the bbsBayes2 package.
-2) posterior draws drawn from continental wide annual indices estimates. 
+1) modeled smooths drawn from the GAMYE model using outputs derived from the bbsBayes2 package (n = 58).
+2) posterior draws drawn from continental wide annual indices estimates (n = 4) 
 
 These estimates were based on data obtained from the North American Breeding Bird survey on a continent wide distribution. 
 

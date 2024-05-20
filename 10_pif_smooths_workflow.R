@@ -75,7 +75,7 @@ dlfiles <- list.files(path = "fitted_models")
 
 for(a in aous){
   
-  a <- aous[10]
+  a <- aous[33]
   
   aou_id <- a
   
@@ -98,7 +98,7 @@ for(a in aous){
      bboi <- bfiles %>%
         filter(name %in% bname)
   
-      drive_download(as_id(bboi$id[1]), path = file.path("fitted_models", bboi$name[1]))
+      drive_download(as_id(bboi$id[1]), path = file.path("01_fitted_models", bboi$name[1]))
   
         } 
 
@@ -122,18 +122,17 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  i = aous[32]
+  i = aous[33]
 
   aou_id <- i
   
   ## prepare data inputs : example 1 
   
-  aou_file <- paste0("C:/r_repo/2024_ECCC_birdtrends/birdtrends_pif/fitted_models/fit_",aou_id,".rds")
+  aou_file <- paste0("C:/r_repo/2024_ECCC_birdtrends/birdtrends_pif/01_fitted_models/fit_",aou_id,".rds")
     
   if(file.exists(aou_file)) {
     
-    
-    dir <- file.path("outputs", i) 
+    dir <- file.path("02_outputs", i) 
     if (!dir.exists(dir)) dir.create(dir)
     
     # loading the fitted model object
