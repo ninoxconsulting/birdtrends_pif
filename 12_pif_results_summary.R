@@ -6,7 +6,8 @@ library(bbsBayes2)
 library(birdtrends)
 library(ggplot2)
 library(doParallel)
-library(foreach)  
+library(foreach) 
+library(ggrepel)
 
 
 # read in the final plot data 
@@ -70,7 +71,15 @@ ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
   theme_bw()+ 
   ylab("short term percentage") + 
   xlab("long term percentage") +
-  geom_text_repel(size = 2, colour = "darkgrey",min.segment.length = 0, seed = 42, box.padding = 0.5)
+  geom_text_repel(size = 2, colour = "grey26",min.segment.length = 0, seed = 42, box.padding = 0.5)
+
+
+ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
+       width = 30,
+       height = 20,
+       units = c("cm"),
+       dpi = 300)
+
 
 # ## summary of all the type. 
 # # convert values into Quartiles (
@@ -78,34 +87,139 @@ ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
 # 2 = low < 25 - 50
 # 3 = moderate - 50 - 75
 # 4 = high = 75 - 90
-# 5 = very high >99
+# 5 = very high >90
 # 
 # 
-# 
-# sum <- target_achieve %>% 
-#   mutate(st_class = case_when(
-#     between(st_lower_pc, 0, 25.999)~ 1,
-#     between(st_lower_pc, 26, 50.999)~ 2,
-#     between(st_lower_pc, 51, 75.999)~ 3,
-#     between(st_lower_pc, 76, 90.999)~ 4,
-#     between(st_lower_pc, 91, 100)~ 5,
-#     TRUE ~ 0),
-#     lt_class = case_when(
-#       between(lt_lower_pc, 0, 25.999)~ 1,
-#       between(lt_lower_pc, 26, 50.999)~ 2,
-#       between(lt_lower_pc, 51, 75.999)~ 3,
-#       between(lt_lower_pc, 76, 90.999)~ 4,
-#       between(lt_lower_pc, 91, 100)~ 5,
-#       TRUE ~ 0)) |> 
-#   select(english, pif_rank, st_class,lt_class)%>% 
-#   arrange( pif_rank)
-#   
-#   
-# 
+
+## Lower class limit 
+
+sum <- target_achieve %>%
+  mutate(st_class = case_when(
+    between(st_lower_pc, 0, 25.999)~ 1,
+    between(st_lower_pc, 26, 50.999)~ 2,
+    between(st_lower_pc, 51, 75.999)~ 3,
+    between(st_lower_pc, 76, 90.999)~ 4,
+    between(st_lower_pc, 91, 100)~ 5,
+    TRUE ~ 0),
+    lt_class = case_when(
+      between(lt_lower_pc, 0, 25.999)~ 1,
+      between(lt_lower_pc, 26, 50.999)~ 2,
+      between(lt_lower_pc, 51, 75.999)~ 3,
+      between(lt_lower_pc, 76, 90.999)~ 4,
+      between(lt_lower_pc, 91, 100)~ 5,
+      TRUE ~ 0)) |>
+  select(english, pif_rank, st_class,lt_class)%>%
+  arrange( pif_rank)
+
+
+# histogram summary 
+
+ss <- sum |> 
+  group_by(pif_rank, st_class) |> 
+  count() |> 
+  mutate(code = case_when(
+    st_class == 1 ~ "very low" ,
+    st_class == 2 ~ "low" ,
+    st_class == 3 ~  "moderate" ,
+    st_class == 4 ~ "high" ,
+    st_class == 5 ~  "very high" 
+  )) |> 
+  ungroup() |> 
+#ss |> 
+  tidyr::complete(code, pif_rank)|> 
+  mutate(tot = case_when(
+    pif_rank == 'd' ~ 45, 
+    pif_rank == "r" ~ 5,
+    pif_rank == 'red' ~ 12)) |> 
+  mutate (pc = (n / tot)*100)
 
 
 
-##geom_histogram()##########################
+ggplot(ss, aes(y = pc, code, fill = pif_rank))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.9,)+
+  scale_x_discrete(limits = c("very low", "low", "moderate","high", "very high" )) +
+  geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.55)+
+  scale_fill_grey()+
+  labs(y = "percent of species")+
+  theme_bw()+
+  theme(
+    axis.title.x = element_blank(),
+    #axis.text.x = element_blank(),
+    #axis.ticks.x = element_blank()
+  )
+
+
+ggsave(file.path("03_summary", "st_allsp_percent_catergory.jpg"),
+       width = 30,
+       height = 20,
+       units = c("cm"),
+       dpi = 300)
+
+
+
+
+## long term  class limit 
+
+ls <- sum |> 
+  group_by(pif_rank, lt_class) |> 
+  count() |> 
+  mutate(code = case_when(
+    lt_class == 1 ~ "very low" ,
+    lt_class == 2 ~ "low" ,
+    lt_class == 3 ~  "moderate" ,
+    lt_class == 4 ~ "high" ,
+    lt_class == 5 ~  "very high" 
+  )) |> 
+  ungroup() |> 
+  #ss |> 
+  tidyr::complete(code, pif_rank)|> 
+  mutate(tot = case_when(
+    pif_rank == 'd' ~ 45, 
+    pif_rank == "r" ~ 5,
+    pif_rank == 'red' ~ 12)) |> 
+  mutate (pc = (n / tot)*100)
+
+
+
+ggplot(ls, aes(y = pc, code, fill = pif_rank))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.9,)+
+  scale_x_discrete(limits = c("very low", "low", "moderate","high", "very high" )) +
+  geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.55)+
+  scale_fill_grey()+
+  labs(y = "percent of species")+
+  theme_bw()+
+  theme(
+    axis.title.x = element_blank(),
+    #axis.text.x = element_blank(),
+    #axis.ticks.x = element_blank()
+  )
+
+
+ggsave(file.path("03_summary", "lt_allsp_percent_catergory.jpg"),
+       width = 30,
+       height = 20,
+       units = c("cm"),
+       dpi = 300)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Detailed plot data 
 ##########################
 
