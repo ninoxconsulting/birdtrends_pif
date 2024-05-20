@@ -10,41 +10,41 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-We estimated the trends for XX bird species identified on the "Watch List" under the 2016 PIF Land bird Conservation Plan. This included; 
+We estimated the trends for 63 bird species identified on the "Watch List" under the 2016 PIF Land Bird Conservation Plan. This included; 
 
-- Red watch list : Species with extremely high vulnerability due to small population and range, high threats, and range wide declines. Aim to recover these species. 
+- Red watch list : Species with extremely high vulnerability due to small population and range, high threats, and range wide declines. Aim to recover these species (n = 12).
 
-- Yellow Watch List (R): Prevent Decline.  
+- Yellow Watch List (R): Prevent Decline (n = 6) 
 
-- Yellow Watch List (D): Reverse decline. 
+- Yellow Watch List (D): Reverse decline (n = 45)
 
 
-For each of the species, we used the modeled smooths drawn from the GAMYE model using outputs derived from the bbsBayes2 package . 
+For each of the species, we used best available data to estimate the trend and predict into the future. Input data types include: 
+1) modeled smooths drawn from the GAMYE model using outputs derived from the bbsBayes2 package.
+2) posterior draws drawn from continental wide annual indices estimates. 
 
-The plots below represent the observed and predicted trends for each species using data obtained from the North American Breeding Bird survey on a continent wide distribution. 
+These estimates were based on data obtained from the North American Breeding Bird survey on a continent wide distribution. 
 
-For each year, the observed indices and errow bars are shown in grey up to 2022. A modeled smooth line to estimate the overall fit is represented by a grey line with confidence interval a grey ribbon. 
+For each year, the observed indices and error bars are shown in grey up to 2022. A modeled smooth line to estimate the overall fit is represented by a grey line with confidence interval shown by a grey ribbon. 
 
-For each species a trend was determined using the estimated smooth line between 2014 and 2022. These dates were chosen to represent the trend from the date at which targets were determined to best available data. A solid grey vertical line is set to 2014. 
+For each species a trend was determined using the estimated smooth line between 2014 and 2022, or trend estimated using gams of posterior distributions between 2014 and 2021. These dates were chosen to represent the trend from the date at which targets were determined to best available data. A solid grey vertical line is set to 2014. 
 
 This trend was then predicted into the future as defined by the red line with associated confidence intervals (orange ribbon) up to 2050. 
 
-Targets were determined for each species for both a short term (2026) and long term goals (2046), each denoted by a hashed grey line. For each of these time periods, blue error bars represents the target range for a given species. A linear blue line also represents an estimated trajectory in which birds could achieve these targets. Note this are basic linear representations 
-
-
+The 2016 PIF Land Bird Conservation Plan defined percent change targets for each species for both a short term (2026) and long term goals (2046). These time periods are denoted by a hashed grey line. For each of these time periods, blue error bars represents the target range for a given species. A blue line represents an estimated trajectory required for a bird to achieve these targets is also included for context.
 
 
 ```{r cars, echo = FALSE}
 
 library(jpeg)
 
-files <- list.files(file.path("outputs"), recursive = T, pattern = "plot.rds")
+files <- list.files(file.path("02_outputs"), recursive = T, pattern = "plot.rds")
 
 for(i in files){
   
   #i = files[2]
   
- aa <-  readRDS(file.path("outputs", i))
+ aa <-  readRDS(file.path("02_outputs", i))
  plot(aa)
  
 }
