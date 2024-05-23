@@ -1,4 +1,5 @@
 
+
 library(dplyr)
 library(readr)
 library(janitor)
@@ -207,21 +208,9 @@ ggsave(file.path("03_summary", "lt_allsp_percent_catergory.jpg"),
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Detailed plot data 
 ##########################
+source("functions/calculate_all_probs.R")
 
 # keep entire distribution of the plots 
 
@@ -275,8 +264,10 @@ df_all <- all_dist  %>%
   #select(-median)
   
 
+plottype = "red"
+
 df <- df_all %>% 
-  filter(pif_rank == "d")
+  filter(pif_rank == plottype)
 
 
 p <- df %>%
@@ -294,14 +285,6 @@ p <- df %>%
   geom_vline(xintercept = 0, col = "grey30", lty = "dashed") +
   guides(col = "none") +
    labs(
-     #title = toupper("Probability of meeting short term trends"),
-  #   subtitle = "plot sutitle",
-  #   caption = "Axis capped at 10,000 USD.<br>
-  #   Data: Pennington, Kate (2018). 
-  #   Bay Area Craigslist Rental Housing Posts, 2000-2018.<br>
-  #   Retrieved from github.com/katepennington/historic_bay_area_craigslist_housing_posts/blob/master/clean_2000_2018.csv.zip.
-  #   <br>
-  #   Visualization: Ansgar Wolsing",
      x = "percent change (%)",
      y = NULL
    ) +
@@ -322,12 +305,16 @@ p <- df %>%
     plot.margin = margin(4, 4, 4, 4)
   )
 
+
+
+if(plottype == "red"){
+
 # create the dataframe for the legend (inside plot)
 df_for_legend <- df %>% 
   filter(english == "Lesser Prairie-Chicken")
 
 p_legend <- df_for_legend %>% 
-  ggplot(aes(x = value, y = as.factor(english))) +
+  ggplot(aes(x = st_ch_pc, y = as.factor(english))) +
   stat_halfeye(fill_type = "segments", alpha = 0.3) +
   stat_interval() +
   #scale_y_discrete(labels = toupper) +
@@ -378,17 +365,17 @@ p_legend <- df_for_legend %>%
 # Insert the custom legend into the plot
 p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.75, clip = FALSE)
 
-ggsave(file.path("summary", "d_listed_sp.jpg"), 
+
+}
+
+p
+
+
+ggsave(file.path("03_summary", paste0(plottype, "_listed_sp.jpg")), 
        width = 30,
        height = 40,
        units = c("cm"),
        dpi = 300)
-
-
-
-
-
-
 
 
 
