@@ -379,10 +379,135 @@ ggsave(file.path("03_summary", paste0(plottype, "_listed_sp.jpg")),
 
 
 
+######################################
+
+## long term trends 
+
+########################
+
+df_all_lt <- all_dist  %>% 
+  left_join(pifs) %>% 
+  select(-unid_combined, -spcode) %>% 
+  group_by(aou) |> 
+  mutate(median = median(lt_ch_pc)) %>% 
+  ungroup() |> 
+  mutate(english_order = fct_reorder(english, desc(median)))
+#arrange(desc(median))#%>% 
+#select(-median)
 
 
+plottype = "red"
+
+df <- df_all_lt %>% 
+  filter(pif_rank == plottype)
 
 
+p <- df %>%
+  ggplot(aes(x =  lt_ch_pc, y = english_order)) +
+  stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
+  #stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
+  stat_interval() +
+  #scale_y_discrete(labels = toupper) +
+  scale_x_continuous(breaks = seq(-100, 100,100)) +
+  xlim(-100, 250) +
+  geom_point(data = df, aes(x = lt_pop_pc_lower, y = as.factor(english)))+
+  geom_point(data = df, aes(x = lt_pop_pc_uppper, y = as.factor(english)))+
+  scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+  #stat_summary(geom = "point", fun = median) +
+  geom_vline(xintercept = 0, col = "grey30", lty = "dashed") +
+  guides(col = "none") +
+  labs(
+    x = "percent change (%)",
+    y = NULL
+  ) +
+  theme_minimal(base_family = font_family)  +
+  theme(
+    plot.background = element_rect(color = NA, fill = bg_color),
+    panel.grid = element_blank(),
+    panel.grid.major.x = element_line(linewidth = 0.1, color = "grey75"),
+    plot.title = element_text(family = "Fira Sans SemiBold"),
+    plot.title.position = "plot",
+    plot.subtitle = element_textbox_simple(
+      margin = margin(t = 4, b = 16), size = 10),
+    plot.caption = element_textbox_simple(
+      margin = margin(t = 12), size = 7
+    ),
+    plot.caption.position = "plot",
+    axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
+    plot.margin = margin(4, 4, 4, 4)
+  )
+
+
+# 
+# if(plottype == "red"){
+#   
+#   # create the dataframe for the legend (inside plot)
+#   df_for_legend <- df %>% 
+#     filter(english == "Lesser Prairie-Chicken")
+#   
+#   p_legend <- df_for_legend %>% 
+#     ggplot(aes(x = st_ch_pc, y = as.factor(english))) +
+#     stat_halfeye(fill_type = "segments", alpha = 0.3) +
+#     stat_interval() +
+#     #scale_y_discrete(labels = toupper) +
+#     #scale_x_continuous(breaks = seq(-100, 100,100)) +
+#     xlim(-90, 100)+
+#     geom_point(data = df_for_legend, aes(x = st_pop_pc_lower, y = as.factor(english)))+
+#     geom_point(data = df_for_legend, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
+#     scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+#     annotate(
+#       "richtext",
+#       y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.85),
+#       x= c(-60, 65, 10, 5, 55, 45),
+#       label = c("50 % of predictions<br>fall within this range", "95 % of prices", 
+#                 "80 % of prices", "lower target", "upper target","Distribution<br>of predictions"),
+#       fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
+#     ) +
+#     geom_curve(
+#       data = data.frame(
+#         y =     c(0.9, 0.9, 0.9,   1.1, 1.82),
+#         yend = c(0.98, 0.98, 0.98,  1.02, 1.82), 
+#         x =    c(-21, 50, 12,  40, 25),
+#         xend = c(-17, 51, 14,  35, 10)),
+#       aes(x = x, xend = xend, y = y, yend = yend),
+#       stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+#       arrow = arrow(angle = 20, length = unit(1, "mm"))
+#     ) +
+#     geom_curve(
+#       data = data.frame(
+#         y =      1.1, 
+#         yend =  1.02,
+#         x =     20,
+#         xend =  25), 
+#       aes(x = x, xend = xend, y = y, yend = yend),
+#       stat = "unique", curvature = -0.2, size = 0.2, color = "grey12",
+#       arrow = arrow(angle = 40, length = unit(1, "mm"))
+#     ) +
+#     scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+#     # coord_flip(xlim = c(0.75, 1.3), ylim = c(0, 6000), expand = TRUE) +
+#     guides(color = "none") +
+#     labs(title = "Legend") +
+#     theme_void(base_family = font_family) +
+#     theme(plot.title = element_text(family = "Fira Sans SemiBold", size = 9,
+#                                     hjust = 0.075),
+#           plot.background = element_rect(color = "grey30", size = 0.2, fill = bg_color))
+#   
+#   
+#   
+#   # Insert the custom legend into the plot
+#   p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.75, clip = FALSE)
+#   
+#   
+# }
+
+p
+
+
+ggsave(file.path("03_summary", paste0(plottype, "_listed_sp_lt.jpg")), 
+       width = 30,
+       height = 40,
+       units = c("cm"),
+       dpi = 300)
 
 
 
