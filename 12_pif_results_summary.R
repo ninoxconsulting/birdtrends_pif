@@ -92,6 +92,24 @@ ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
 # 
 # 
 
+
+
+# testing differnt options 
+
+sum1 <- target_achieve %>%
+  mutate(st_class_type = case_when(
+    st_lower_pc <10 ~ "miss", 
+    st_lower_pc >90 ~ "exceed", 
+    # wfk
+    # middle 
+    TRUE ~ "tbd"
+  ))%>% 
+  select( st_lower_pc, aou, st_class_type)
+
+
+
+
+
 ## Lower class limit 
 
 sum <- target_achieve %>%
@@ -208,6 +226,12 @@ ggsave(file.path("03_summary", "lt_allsp_percent_catergory.jpg"),
 
 
 
+
+
+
+
+
+
 # Detailed plot data 
 ##########################
 source("functions/calculate_all_probs.R")
@@ -263,11 +287,75 @@ df_all <- all_dist  %>%
   #arrange(desc(median))#%>% 
   #select(-median)
   
+# update this line for each seperate plot 
 
-plottype = "red"
+plottype = "red"  # "red", "d"
 
 df <- df_all %>% 
   filter(pif_rank == plottype)
+
+
+# edits 
+
+
+
+
+## testing the disribution thresholds #### IN PROGRESS 
+#df <- left_join(df, sum1)
+
+# calculate the distribution parameters 
+
+dist_df <- df %>% 
+  select(st_ch_pc, aou, st_pop_pc_lower, english_order)%>% 
+  group_by(aou)%>% 
+  mutate(median = median(st_ch_pc),
+         sd = sd(st_ch_pc))
+
+p <- c(.05, 0.1, 0.2,0.25, 0.5,0.75,.80, .90, .95)
+
+p_names <- paste0(p*100, "%")
+p_funs <- map(p, ~partial(quantile, probs = .x, na.rm = TRUE)) %>% 
+  set_names(nm = p_names)
+
+
+dist_df_percentiles <-dist_df %>% 
+  group_by(english_order) %>% 
+  summarize_at(vars(st_ch_pc), funs(!!!p_funs))%>%
+  ungroup()
+
+short_dist_df <- dist_df%>% 
+  select(-st_ch_pc)%>% 
+  distinct()%>%
+  arrange(median)
+
+sum1 <-  left_join(short_dist_df, dist_df_percentiles)%>%
+  ungroup()
+
+
+# group into catergories 
+
+sum1 <- sum1 %>%
+  mutate(st_class_type = case_when(
+    `90%` < st_pop_pc_lower ~ "miss", 
+    `10%` >  st_pop_pc_lower  ~ "exceed", 
+    `75%` > st_pop_pc_lower ~ "ontrack",# wfk
+    `25%` < st_pop_pc_lower ~ "falling short",# middle 
+    TRUE ~ "tbd"
+  ))#%>% 
+  #select( st_lower_pc, aou, st_class_type)
+
+
+
+
+
+
+
+
+
+
+
+
+### PLots continued 
 
 
 p <- df %>%
@@ -302,8 +390,8 @@ p <- df %>%
     ),
     plot.caption.position = "plot",
     axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
-    plot.margin = margin(4, 4, 4, 4)
-  )
+    plot.margin = margin(4, 4, 4, 4) 
+    )
 
 
 
@@ -327,8 +415,8 @@ p_legend <- df_for_legend %>%
     "richtext",
     y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.85),
     x= c(-60, 65, 10, 5, 55, 45),
-    label = c("50 % of predictions<br>fall within this range", "95 % of prices", 
-              "80 % of prices", "lower target", "upper target","Distribution<br>of predictions"),
+    label = c("50 % of predictions<br>fall within this range", "95 % of projections", 
+              "80 % of projections", "lower target", "upper target","Distribution<br>of projections"),
     fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
   ) +
   geom_curve(
@@ -459,8 +547,8 @@ p <- df %>%
 #       "richtext",
 #       y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.85),
 #       x= c(-60, 65, 10, 5, 55, 45),
-#       label = c("50 % of predictions<br>fall within this range", "95 % of prices", 
-#                 "80 % of prices", "lower target", "upper target","Distribution<br>of predictions"),
+#       label = c("50 % of predictions<br>fall within this range", "95 % of projections", 
+#                 "80 % of projections", "lower target", "upper target","Distribution<br>of projections"),
 #       fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
 #     ) +
 #     geom_curve(
@@ -512,7 +600,54 @@ ggsave(file.path("03_summary", paste0(plottype, "_listed_sp_lt.jpg")),
 
 
   
+
+
+library(dplyr)
+library(ggplot2)
+library(distributional)
+
+theme_set(theme_ggdist())
+
+# ON SAMPLE DATA
+set.seed(1234)
+df = data.frame(
+  group = c("a", "b", "c"),
+  value = rnorm(1500, mean = c(5, 7, 9), sd = c(1, 1.5, 1))
+)
+df %>%
+  ggplot(aes(x = value, y = group)) +
+  stat_interval() +
+  scale_color_brewer()
+
+# ON ANALYTICAL DISTRIBUTIONS
+dist_df = data.frame(
+  group = c("a", "b", "c"),
+  mean =  c(  5,   7,   8),
+  sd =    c(  1, 1.5,   1)
+)
+# Vectorized distribution types, like distributional::dist_normal()
+# and posterior::rvar(), can be used with the `xdist` / `ydist` aesthetics
+dist_df %>%
+  ggplot(aes(y = group, xdist = dist_normal(mean, sd))) +
+  stat_interval() +
+  scale_color_brewer()
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
   
   
