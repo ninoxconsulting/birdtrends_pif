@@ -6,7 +6,7 @@
 library(dplyr)
 library(readr)
 library(janitor)
-#devtools::install_github("ninoxconsulting/birdtrends")
+devtools::install_github("ninoxconsulting/birdtrends")
 library(bbsBayes2)
 library(birdtrends)
 library(ggplot2)
@@ -46,7 +46,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  i = aous[3]
+  i = aous[4]
   
   aou_id <- i
   
@@ -123,16 +123,29 @@ ldf_hgams <- tibble::rowid_to_column(fitted_data, "draw") %>%
   dplyr::rename('year' = name, "proj_y" = value)%>%
   mutate(year = as.integer(year))
 
+    
+    
+    
+# convert the ldf_hams into indupt data for the plot 
+
+
+  i1 <- ldf_hgams %>% 
+    group_by(year)%>% 
+    mutate(index = median(proj_y), 
+           index_q_0.025 = stats::quantile(proj_y, probs = 0.025),
+           index_q_0.975 = stats::quantile(proj_y, probs = 0.9755))%>%
+    select(-draw, -proj_y)
+  
+  
 
 trend_sm <- get_trend(ldf_hgams , start_yr = 2014, end_yr = 2022, method = "gmean")
-
 
 
 ######################################################################
 # 4. predict trend 
 ##########################################################
 
-preds_sm <- predict_trend(ldf_hgams, trend_sm, start_yr = 2022, proj_yr = 2050)
+preds_sm <- proj_trend(ldf_hgams, trend_sm, start_yr = 2022, proj_yr = 2050)
 
 ######################################################################
 # 5. plot graphs 
@@ -160,7 +173,6 @@ trend_sm_summary <- trend_sm  %>%
 trend_sm_summary 
 
 
-
 ## Get the predicted trends from the excel sheet 
 targ <- pifs |>  filter(aou == aou_id)
 
@@ -175,7 +187,7 @@ index_baseline <- get_targets(model_indices = ldf_hgams,
 
 
 # sm_plots with targets 
-sm_plot_target <- plot_trend(raw_indices = NULL , 
+sm_plot_target <- plot_trend(raw_indices = i1 , 
                              model_indices = ldf_hgams, 
                              pred_indices = preds_sm,
                              start_yr = 2014, 
