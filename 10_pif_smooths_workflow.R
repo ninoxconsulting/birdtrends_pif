@@ -75,7 +75,7 @@ dlfiles <- list.files(path = "fitted_models")
 
 for(a in aous){
   
-  a <- aous[33]
+ # a <- aous[33]
   
   aou_id <- a
   
@@ -169,51 +169,56 @@ for(i in aous){
     
     # fit the Heirachial GAM model using all years: 
     
-    fitted_smooths <- fit_smooths(indat3, start_yr = NA, end_yr = NA)
+    fitted_smooths_wide <- fit_smooths(indat3, start_yr = NA, end_yr = NA, longform = FALSE)
     
-    sel_bbssmooths <- fitted_smooths %>% 
-      dplyr::slice_sample(., n = 100) %>%  
-      dplyr::mutate(draw = seq(1, 100, 1)) %>% 
-      tidyr::pivot_longer(., cols = !starts_with("d")) |> 
-      dplyr::mutate(yearn = as.integer(name) - min(as.integer(name)))
+    fitted_smooths <- fit_smooths(indat3, start_yr = NA, end_yr = NA, longform = TRUE)
     
     
-    
-    comp_plot_3 <- ggplot2::ggplot(data =  sel_bbssmooths,
-                                   ggplot2::aes(x = yearn,y = value,
-                                                group = draw, colour = draw))+
-      ggplot2::geom_pointrange(data = input1,
-                               ggplot2::aes(x = yearn, y = index,
-                                            ymin = index_q_0.025,
-                                            ymax = index_q_0.975),
-                               inherit.aes = FALSE,
-                               alpha = 0.3)+
-      ggplot2::geom_line(alpha = 0.3)+
-      ggplot2::scale_colour_viridis_c() +
-      ggplot2::scale_y_continuous(trans = "log10")+
-      ggplot2::theme_bw()
-    
-    comp_plot_3
-    
-    
+    # sel_bbssmooths <- fitted_smooths_wide %>% 
+    #   dplyr::slice_sample(., n = 100) %>%  
+    #   dplyr::mutate(draw = seq(1, 100, 1)) %>% 
+    #   tidyr::pivot_longer(., cols = !starts_with("d")) |> 
+    #   dplyr::mutate(yearn = as.integer(name) - min(as.integer(name)))
+    # 
+    # 
+    # 
+    # comp_plot_3 <- ggplot2::ggplot(data =  sel_bbssmooths,
+    #                                ggplot2::aes(x = yearn,y = value,
+    #                                             group = draw, colour = draw))+
+    #   ggplot2::geom_pointrange(data = input1,
+    #                            ggplot2::aes(x = yearn, y = index,
+    #                                         ymin = index_q_0.025,
+    #                                         ymax = index_q_0.975),
+    #                            inherit.aes = FALSE,
+    #                            alpha = 0.3)+
+    #   ggplot2::geom_line(alpha = 0.3)+
+    #   ggplot2::scale_colour_viridis_c() +
+    #   ggplot2::scale_y_continuous(trans = "log10")+
+    #   ggplot2::theme_bw()
+    # 
+    # comp_plot_3
+    # 
+    # 
       
       ######################################################################
       # 3. calculate trend 
       ##########################################################
       
-      ldf_smooths <- tibble::rowid_to_column(fitted_smooths, "draw") %>%
-        tidyr::pivot_longer(., cols = !starts_with("d")) %>%
-        dplyr::rename('year' = name, "proj_y" = value)%>%
-        mutate(year = as.integer(year))
+    #   ldf_smooths <- tibble::rowid_to_column(fitted_smooths_wide, "draw") %>%
+    #     tidyr::pivot_longer(., cols = !starts_with("d")) %>%
+    #     dplyr::rename('year' = name, "proj_y" = value)%>%
+    #     mutate(year = as.integer(year))
+    # trend_sm_origianl <- get_trend(
+    #   ldf_smooths, start_yr = 2014, end_yr = 2022, method = "gmean")
+    # 
       
-      
-      trend_sm <- get_trend(ldf_smooths, start_yr = 2014, end_yr = 2022, method = "gmean")
+      trend_sm <- get_trend(fitted_smooths, start_yr = 2014, end_yr = 2022, method = "gmean")
       
       ######################################################################
       # 4. predict trend 
       ##########################################################
       
-      preds_sm <- predict_trend(ldf_smooths, trend_sm, start_yr = 2023, proj_yr = 2050)
+      preds_sm <- proj_trend(fitted_smooths, trend_sm, start_yr = 2023, proj_yr = 2050)
       
       
       ######################################################################
@@ -246,7 +251,7 @@ for(i in aous){
       ## Get the predicted trends from the excel sheet 
       targ <- pifs |>  filter(aou == aou_id)
       
-      index_baseline <- get_targets(model_indices = ldf_smooths, 
+      index_baseline <- get_targets(model_indices = fitted_smooths, 
                                     ref_year = 2014, 
                                     st_year = 2026, 
                                     st_lu_target_pc = targ$st_pop_pc_lower,
@@ -258,7 +263,7 @@ for(i in aous){
       
       # sm_plots with targets 
       sm_plot_target <- plot_trend(raw_indices = input1 , 
-                                      model_indices = ldf_smooths, 
+                                      model_indices = fitted_smooths, 
                                       pred_indices = preds_sm,
                                       start_yr = 2014, 
                                       end_yr = 2022, 
@@ -299,14 +304,14 @@ for(i in aous){
       # note need to figure out a way to automate these plots 
       
       
-      prob_st <- calculate_probs(predicted_trends = preds_sm,
+      prob_st <- calculate_probs(projected_trends = preds_sm,
                       ref_year = 2014, 
                       targ_year = 2026, 
                       prob_decrease = NULL, 
                       prob_increase = st_inc_dec)
       
       
-      prob_lt <- calculate_probs(predicted_trends = preds_sm,
+      prob_lt <- calculate_probs(projected_trends = preds_sm,
                                  ref_year = 2014, 
                                  targ_year = 2046, 
                                  prob_decrease = NULL, 
@@ -314,8 +319,8 @@ for(i in aous){
       
     
       
-      outdata <- list(ldf_smooths, trend_sm, preds_sm,  targ, index_baseline, prob_st, prob_lt  )
-      names(outdata)<- c("ldf_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "prob_st", "prob_lt")
+      outdata <- list(fitted_smooths, trend_sm, preds_sm,  targ, index_baseline, prob_st, prob_lt  )
+      names(outdata)<- c("fitted_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "prob_st", "prob_lt")
       
       
       saveRDS(outdata, file.path(dir, paste0(aou_id,"_outputs.rds")))

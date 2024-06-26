@@ -4,7 +4,6 @@
 
 
 library(dplyr)
-library(readr)
 library(janitor)
 devtools::install_github("ninoxconsulting/birdtrends")
 library(bbsBayes2)
@@ -12,7 +11,7 @@ library(birdtrends)
 library(ggplot2)
 library(readr)
 
-# notes files recieved directly from Audbon and downlowed on a locatl copy. A copy of the data 
+# notes files received directly from Audbon and downlowed on a locatl copy. A copy of the data 
 # is saved on the main google drive. Due to the number f files this is not currently automated in the 
 # script and can be done manually. 
 ## https://drive.google.com/drive/folders/1AwjONN_eTZP-IXmzKItjyYKS_NTA1psV
@@ -72,7 +71,6 @@ for(i in aous){
     # loading the fitted model object
     fit <- read_csv(aou_file)
     
-    
     # format the files to a suitable method 
     
     tt <- t(fit)
@@ -88,76 +86,75 @@ for(i in aous){
     # option 2: Fit GAM to each draw : data input type 2
     
     fitted_data <- fit_gam(t)
-    
-    sel_hgams <- fitted_data %>%
-      dplyr::slice_sample(., n = 100) %>%  
-      dplyr::mutate(draw = seq(1, 100, 1)) %>% 
-      tidyr::pivot_longer(., cols = !starts_with("d")) |> 
-      dplyr::mutate(yearn = as.integer(name) - min(as.integer(name)))
-    
-
-    comp_plot_3 <- ggplot2::ggplot(data =  sel_hgams,
-                               ggplot2::aes(x = yearn,y = value,
-                                            group = draw, colour = draw))+
-  # ggplot2::geom_pointrange(data = input1,
-  #                          ggplot2::aes(x = yearn, y = index,
-  #                                       ymin = index_q_0.025,
-  #                                       ymax = index_q_0.975),
-  #                          inherit.aes = FALSE,
-  #                          alpha = 0.3)+
-    ggplot2::geom_line(alpha = 0.3)+
-    ggplot2::scale_colour_viridis_c() +
-    ggplot2::scale_y_continuous(trans = "log10")+
-    ggplot2::theme_bw()
-
-    comp_plot_3
-
+  #   fitted_data_wide <- fit_gam(t, longform = FALSE)
+  #   
+  #   sel_hgams <- fitted_data_wide %>%
+  #     dplyr::slice_sample(., n = 100) %>%  
+  #     dplyr::mutate(draw = seq(1, 100, 1)) %>% 
+  #     tidyr::pivot_longer(., cols = !starts_with("d")) |> 
+  #     dplyr::mutate(yearn = as.integer(name) - min(as.integer(name)))
+  #   
+  # 
+  #   comp_plot_3 <- ggplot2::ggplot(data =  sel_hgams,
+  #                              ggplot2::aes(x = yearn,y = value,
+  #                                           group = draw, colour = draw))+
+  # # ggplot2::geom_pointrange(data = input1,
+  # #                          ggplot2::aes(x = yearn, y = index,
+  # #                                       ymin = index_q_0.025,
+  # #                                       ymax = index_q_0.975),
+  # #                          inherit.aes = FALSE,
+  # #                          alpha = 0.3)+
+  #   ggplot2::geom_line(alpha = 0.3)+
+  #   ggplot2::scale_colour_viridis_c() +
+  #   ggplot2::scale_y_continuous(trans = "log10")+
+  #   ggplot2::theme_bw()
+  # 
+  #   comp_plot_3
+  # 
 
 
 ######################################################################
 # 3. calculate trend 
 ##########################################################
 
-ldf_hgams <- tibble::rowid_to_column(fitted_data, "draw") %>%
-  tidyr::pivot_longer(., cols = !starts_with("d")) %>%
-  dplyr::rename('year' = name, "proj_y" = value)%>%
-  mutate(year = as.integer(year))
-
+# ldf_hgams <- tibble::rowid_to_column(fitted_data, "draw") %>%
+#   tidyr::pivot_longer(., cols = !starts_with("d")) %>%
+#   dplyr::rename('year' = name, "proj_y" = value) %>%
+#   mutate(year = as.integer(year))
+# 
+#     
     
     
-    
-# convert the ldf_hams into indupt data for the plot 
-
-
-  i1 <- ldf_hgams %>% 
-    group_by(year)%>% 
-    mutate(index = median(proj_y), 
-           index_q_0.025 = stats::quantile(proj_y, probs = 0.025),
-           index_q_0.975 = stats::quantile(proj_y, probs = 0.9755))%>%
-    select(-draw, -proj_y)
-  
+# # convert the ldf_hams into indupt data for the plot 
+#   i1 <- fitted_data %>% 
+#     group_by(year)%>% 
+#     mutate(index = median(proj_y), 
+#            index_q_0.025 = stats::quantile(proj_y, probs = 0.05),
+#            index_q_0.975 = stats::quantile(proj_y, probs = 0.95))%>%
+#     select(-draw, -proj_y)
+#   
   
 
-trend_sm <- get_trend(ldf_hgams , start_yr = 2014, end_yr = 2022, method = "gmean")
+trend_sm <- get_trend(fitted_data , start_yr = 2014, end_yr = 2022, method = "gmean")
 
 
 ######################################################################
 # 4. predict trend 
 ##########################################################
 
-preds_sm <- proj_trend(ldf_hgams, trend_sm, start_yr = 2022, proj_yr = 2050)
+preds_sm <- proj_trend(fitted_data, trend_sm, start_yr = 2022, proj_yr = 2050)
 
 ######################################################################
 # 5. plot graphs 
 ##########################################################
-# 
-# smooth_plot <- plot_trend(raw_indices = input_option_1, 
-#                           model_indices = ldf_smooths, 
-#                           pred_indices = preds_sm,
-#                           start_yr = 2014, 
-#                           end_yr = 2022)
-# 
-# smooth_plot
+
+smooth_plot <- plot_trend(raw_indices = NULL,
+                          model_indices = fitted_data,
+                          pred_indices = preds_sm,
+                          start_yr = 2014,
+                          end_yr = 2021)
+
+smooth_plot
 
 
 ###########################################
@@ -176,7 +173,7 @@ trend_sm_summary
 ## Get the predicted trends from the excel sheet 
 targ <- pifs |>  filter(aou == aou_id)
 
-index_baseline <- get_targets(model_indices = ldf_hgams, 
+index_baseline <- get_targets(model_indices = fitted_data, 
                               ref_year = 2014, 
                               st_year = 2026, 
                               st_lu_target_pc = targ$st_pop_pc_lower,
@@ -187,8 +184,8 @@ index_baseline <- get_targets(model_indices = ldf_hgams,
 
 
 # sm_plots with targets 
-sm_plot_target <- plot_trend(raw_indices = i1 , 
-                             model_indices = ldf_hgams, 
+sm_plot_target <- plot_trend(raw_indices = NULL, 
+                             model_indices = fitted_data, 
                              pred_indices = preds_sm,
                              start_yr = 2014, 
                              end_yr = 2021, 
@@ -228,14 +225,14 @@ lt_inc_dec <- targ %>%
 
 # note need to figure out a way to automate these plots 
 
-prob_st <- calculate_probs(predicted_trends = preds_sm,
+prob_st <- calculate_probs(projected_trends = preds_sm,
                            ref_year = 2014, 
                            targ_year = 2026, 
                            prob_decrease = NULL, 
                            prob_increase = st_inc_dec)
 
 
-prob_lt <- calculate_probs(predicted_trends = preds_sm,
+prob_lt <- calculate_probs(projected_trends = preds_sm,
                            ref_year = 2014, 
                            targ_year = 2046, 
                            prob_decrease = NULL, 
@@ -243,8 +240,8 @@ prob_lt <- calculate_probs(predicted_trends = preds_sm,
 
 
 
-outdata <- list(ldf_hgams, trend_sm, preds_sm,  targ, index_baseline, prob_st, prob_lt  )
-names(outdata)<- c("ldf_hgams", "trend_sm", "pred_sm", "targ", "index_baseline", "prob_st", "prob_lt")
+outdata <- list(fitted_data, trend_sm, preds_sm,  targ, index_baseline, prob_st, prob_lt)
+names(outdata)<- c("fitted_data", "trend_sm", "pred_sm", "targ", "index_baseline", "prob_st", "prob_lt")
 
 
 saveRDS(outdata, file.path(dir, paste0(aou_id,"_outputs.rds")))
