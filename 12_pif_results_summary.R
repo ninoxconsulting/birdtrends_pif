@@ -1,5 +1,4 @@
 
-
 library(dplyr)
 library(readr)
 library(janitor)
@@ -9,6 +8,11 @@ library(ggplot2)
 library(doParallel)
 library(foreach) 
 library(ggrepel)
+library(tidyverse)
+library(ggtext)
+library(ggdist)
+library(glue)
+library(patchwork)
 
 
 # read in the final plot data 
@@ -82,161 +86,13 @@ ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
        dpi = 300)
 
 
-# ## summary of all the type. 
-# # convert values into Quartiles (
-# 1 = very low <25
-# 2 = low < 25 - 50
-# 3 = moderate - 50 - 75
-# 4 = high = 75 - 90
-# 5 = very high >90
-# 
-# 
-
-
-
-# testing differnt options 
-
-sum1 <- target_achieve %>%
-  mutate(st_class_type = case_when(
-    st_lower_pc <10 ~ "miss", 
-    st_lower_pc >90 ~ "exceed", 
-    # wfk
-    # middle 
-    TRUE ~ "tbd"
-  ))%>% 
-  select( st_lower_pc, aou, st_class_type)
 
 
 
 
+## estimate the difference between short and long term trends
 
-## Lower class limit 
-
-sum <- target_achieve %>%
-  mutate(st_class = case_when(
-    between(st_lower_pc, 0, 25.999)~ 1,
-    between(st_lower_pc, 26, 50.999)~ 2,
-    between(st_lower_pc, 51, 75.999)~ 3,
-    between(st_lower_pc, 76, 90.999)~ 4,
-    between(st_lower_pc, 91, 100)~ 5,
-    TRUE ~ 0),
-    lt_class = case_when(
-      between(lt_lower_pc, 0, 25.999)~ 1,
-      between(lt_lower_pc, 26, 50.999)~ 2,
-      between(lt_lower_pc, 51, 75.999)~ 3,
-      between(lt_lower_pc, 76, 90.999)~ 4,
-      between(lt_lower_pc, 91, 100)~ 5,
-      TRUE ~ 0)) |>
-  select(english, pif_rank, st_class,lt_class)%>%
-  arrange( pif_rank)
-
-
-# histogram summary 
-
-ss <- sum |> 
-  group_by(pif_rank, st_class) |> 
-  count() |> 
-  mutate(code = case_when(
-    st_class == 1 ~ "very low" ,
-    st_class == 2 ~ "low" ,
-    st_class == 3 ~  "moderate" ,
-    st_class == 4 ~ "high" ,
-    st_class == 5 ~  "very high" 
-  )) |> 
-  ungroup() |> 
-#ss |> 
-  tidyr::complete(code, pif_rank)|> 
-  mutate(tot = case_when(
-    pif_rank == 'd' ~ 45, 
-    pif_rank == "r" ~ 5,
-    pif_rank == 'red' ~ 12)) |> 
-  mutate (pc = (n / tot)*100)
-
-
-
-ggplot(ss, aes(y = pc, code, fill = pif_rank))+
-  geom_bar(stat = "identity", position = "dodge", width = 0.9,)+
-  scale_x_discrete(limits = c("very low", "low", "moderate","high", "very high" )) +
-  geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.55)+
-  scale_fill_grey()+
-  labs(y = "percent of species")+
-  theme_bw()+
-  theme(
-    axis.title.x = element_blank(),
-    #axis.text.x = element_blank(),
-    #axis.ticks.x = element_blank()
-  )
-
-
-ggsave(file.path("03_summary", "st_allsp_percent_catergory.jpg"),
-       width = 30,
-       height = 20,
-       units = c("cm"),
-       dpi = 300)
-
-
-
-
-## long term  class limit 
-
-ls <- sum |> 
-  group_by(pif_rank, lt_class) |> 
-  count() |> 
-  mutate(code = case_when(
-    lt_class == 1 ~ "very low" ,
-    lt_class == 2 ~ "low" ,
-    lt_class == 3 ~  "moderate" ,
-    lt_class == 4 ~ "high" ,
-    lt_class == 5 ~  "very high" 
-  )) |> 
-  ungroup() |> 
-  #ss |> 
-  tidyr::complete(code, pif_rank)|> 
-  mutate(tot = case_when(
-    pif_rank == 'd' ~ 45, 
-    pif_rank == "r" ~ 5,
-    pif_rank == 'red' ~ 12)) |> 
-  mutate (pc = (n / tot)*100)
-
-
-
-ggplot(ls, aes(y = pc, code, fill = pif_rank))+
-  geom_bar(stat = "identity", position = "dodge", width = 0.9,)+
-  scale_x_discrete(limits = c("very low", "low", "moderate","high", "very high" )) +
-  geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.55)+
-  scale_fill_grey()+
-  labs(y = "percent of species")+
-  theme_bw()+
-  theme(
-    axis.title.x = element_blank(),
-    #axis.text.x = element_blank(),
-    #axis.ticks.x = element_blank()
-  )
-
-
-ggsave(file.path("03_summary", "lt_allsp_percent_catergory.jpg"),
-       width = 30,
-       height = 20,
-       units = c("cm"),
-       dpi = 300)
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Detailed plot data 
-##########################
 source("functions/calculate_all_probs.R")
-
-# keep entire distribution of the plots 
 
 all_dist = foreach(i= mraou, .combine=rbind )%dopar%{
   
@@ -248,18 +104,16 @@ all_dist = foreach(i= mraou, .combine=rbind )%dopar%{
   preds_sm <- mtemp$pred_sm
   
   # short term
-  probs_st <- calculate_all_probs(predicted_trends = preds_sm, ref_year = 2014, targ_year = 2026) |> 
-    select(ch_pc) |> 
-    mutate(aou = i) |> 
+  probs_st <- calculate_all_probs(projected_trends = preds_sm, ref_year = 2014, targ_year = 2026) |> 
+    dplyr::select(ch_pc) |> 
+    dplyr::mutate(aou = i) |> 
     rename("st_ch_pc" = ch_pc)
-  
-  
+
   # long term trends
-  probs_lt <- calculate_all_probs(predicted_trends = preds_sm, ref_year = 2014, targ_year = 2046) |> 
+  probs_lt <- calculate_all_probs(projected_trends = preds_sm, ref_year = 2014, targ_year = 2046) |> 
     select(ch_pc) |> 
     mutate(aou = i) |> 
     rename("lt_ch_pc" = ch_pc)
-  
   
   probs <- cbind(probs_st , probs_lt ) 
   probs <- probs[,-4]
@@ -267,15 +121,9 @@ all_dist = foreach(i= mraou, .combine=rbind )%dopar%{
   
 } 
   
-  
-bg_color <- "grey97"
-font_family <- "Fira Sans"
-library(tidyverse)
-library(ggtext)
-library(ggdist)
-library(glue)
-library(patchwork)
 
+
+## full posterior distribution 
 
 df_all <- all_dist  %>% 
   left_join(pifs) %>% 
@@ -284,58 +132,61 @@ df_all <- all_dist  %>%
   mutate(median = median(st_ch_pc)) %>% 
   ungroup() |> 
   mutate(english_order = fct_reorder(english, desc(median)))
-  #arrange(desc(median))#%>% 
-  #select(-median)
   
-# update this line for each seperate plot 
-
-plottype = "red"  # "red", "d"
-
-df <- df_all %>% 
-  filter(pif_rank == plottype)
 
 
-# edits 
-
-
-
-
-## testing the disribution thresholds #### IN PROGRESS 
-#df <- left_join(df, sum1)
-
-# calculate the distribution parameters 
-
-dist_df <- df %>% 
-  select(st_ch_pc, aou, st_pop_pc_lower, english_order)%>% 
-  group_by(aou)%>% 
-  mutate(median = median(st_ch_pc),
-         sd = sd(st_ch_pc))
+## summary of distribution (quartiles )
+# generate function to summarise the output dittribution
 
 p <- c(.05, 0.1, 0.2,0.25, 0.5,0.75,.80, .90, .95)
-
 p_names <- paste0(p*100, "%")
 p_funs <- map(p, ~partial(quantile, probs = .x, na.rm = TRUE)) %>% 
   set_names(nm = p_names)
 
 
-dist_df_percentiles <-dist_df %>% 
+dist_df <- df_all %>% 
+  select(st_ch_pc, aou, st_pop_pc_lower, english_order)%>% 
+  group_by(aou)%>% 
+  mutate(median = median(st_ch_pc))
+
+dist_df_percentiles <- dist_df %>% 
   group_by(english_order) %>% 
   summarize_at(vars(st_ch_pc), funs(!!!p_funs))%>%
   ungroup()
 
-short_dist_df <- dist_df%>% 
+short_dist_df <- dist_df %>% 
   select(-st_ch_pc)%>% 
   distinct()%>%
   arrange(median)
 
-sum1 <-  left_join(short_dist_df, dist_df_percentiles)%>%
+st_target <- left_join(short_dist_df, dist_df_percentiles)%>%
   ungroup()
 
 
-# group into catergories 
+# group into catergories - based on short term catergory 
+
+
+st_target <- st_target %>%
+  mutate(st_class_type1 = case_when(
+    `5%` <= -30 & `95%` >=43 ~ "uncertain",
+    `75%` < st_pop_pc_lower ~ "miss",
+    `25%` > st_pop_pc_lower ~ "exceed", 
+    `25%` < st_pop_pc_lower & `50%`> st_pop_pc_lower ~ "falling short",
+    `50%` < st_pop_pc_lower & `75%`> st_pop_pc_lower ~ "ontrack",
+    TRUE ~ "tbd"
+  ))
+  
+  
+  
+#select( st_lower_pc, aou, st_class_type)
+
+
+
 
 sum1 <- sum1 %>%
   mutate(st_class_type = case_when(
+    
+    
     `90%` < st_pop_pc_lower ~ "miss", 
     `10%` >  st_pop_pc_lower  ~ "exceed", 
     `75%` > st_pop_pc_lower ~ "ontrack",# wfk
@@ -351,6 +202,19 @@ sum1 <- sum1 %>%
 
 
 
+bg_color <- "grey97"
+font_family <- "Fira Sans"
+
+
+# update this line for each seperate plot 
+
+#plottype = "d"  # "r", "d"
+
+df <- df_all %>% 
+  filter(pif_rank == plottype)
+
+
+# edits 
 
 
 
