@@ -70,7 +70,7 @@ aous <- redpifs$aou
 # check if downloaded and if not download
 
 bfiles <- drive_ls(as_id("1AwjONN_eTZP-IXmzKItjyYKS_NTA1psV"))
-dlfiles <- list.files(path = "fitted_models")
+dlfiles <- list.files(path = "01_fitted_models")
 
 
 for(a in aous){
@@ -122,7 +122,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  i = aous[33]
+  #i = aous[1]
 
   aou_id <- i
   
@@ -248,7 +248,7 @@ for(i in aous){
       
       
       
-      ## Get the predicted trends from the excel sheet 
+      ## Get the predicted targets from the excel sheet 
       targ <- pifs |>  filter(aou == aou_id)
       
       index_baseline <- get_targets(model_indices = fitted_smooths, 

@@ -18,7 +18,7 @@ library(readr)
 # 
 
 # read in the updated plots function 
-source("functions/plot_trend_temp.r")
+#source("functions/plot_trend_temp.r")
 
 outputs <- "02_outputs"
 
@@ -37,15 +37,13 @@ aous <- pifs$aou
 # Step 1: 
 # check if downloaded and if not download - see note above 
 
-
-
 ##########################################
 
 aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  i = aous[4]
+  #i = aous[1]
   
   aou_id <- i
   
