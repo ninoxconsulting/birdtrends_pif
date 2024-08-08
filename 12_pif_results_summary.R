@@ -1,3 +1,4 @@
+# read in libraries 
 
 library(dplyr)
 library(readr)
@@ -13,6 +14,7 @@ library(ggtext)
 library(ggdist)
 library(glue)
 library(patchwork)
+
 
 
 # read in the final plot data 
@@ -41,7 +43,7 @@ pif_rank <- pifs |> select(aou, english, pif_rank)
 # get the percentage values of meeting the short-term 
 
 target_achieve = foreach(i= mraou, .combine=rbind )%dopar%{
-  #i = mraoul[1]
+  i = mraoul[1]
   
   mtemp = readRDS(file.path(outputs, i , paste0(i , "_outputs.rds"))) 
   st <- mtemp$prob_st
@@ -90,9 +92,20 @@ ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
 
 
 
-## estimate the difference between short and long term trends
 
-source("functions/calculate_all_probs.R")
+
+## Part 2
+
+## Summarise how the distribution matches to the targets and catergortise into groups. 
+
+# keep entire distribution of the plots 
+
+
+
+### need to review this as something no longer workfinh with Calc_probs function... check idf
+# in the package or if need to use the one in this package under ":functions" folder. 
+
+
 
 all_dist = foreach(i= mraou, .combine=rbind )%dopar%{
   
@@ -104,16 +117,18 @@ all_dist = foreach(i= mraou, .combine=rbind )%dopar%{
   preds_sm <- mtemp$pred_sm
   
   # short term
-  probs_st <- calculate_all_probs(projected_trends = preds_sm, ref_year = 2014, targ_year = 2026) |> 
-    dplyr::select(ch_pc) |> 
-    dplyr::mutate(aou = i) |> 
+  probs_st <- trend_change(projected_trends = preds_sm, ref_year = 2014, targ_year = 2026) |> 
+    select(ch_pc) |> 
+    mutate(aou = i) |> 
     rename("st_ch_pc" = ch_pc)
-
+  
+  
   # long term trends
-  probs_lt <- calculate_all_probs(projected_trends = preds_sm, ref_year = 2014, targ_year = 2046) |> 
+  probs_lt <- trend_change(projected_trends = preds_sm, ref_year = 2014, targ_year = 2046) |> 
     select(ch_pc) |> 
     mutate(aou = i) |> 
     rename("lt_ch_pc" = ch_pc)
+  
   
   probs <- cbind(probs_st , probs_lt ) 
   probs <- probs[,-4]
@@ -121,9 +136,7 @@ all_dist = foreach(i= mraou, .combine=rbind )%dopar%{
   
 } 
   
-
-
-## full posterior distribution 
+# combine the data with the metadata about the species   
 
 df_all <- all_dist  %>% 
   left_join(pifs) %>% 
@@ -134,40 +147,41 @@ df_all <- all_dist  %>%
   mutate(english_order = fct_reorder(english, desc(median)))
   
 
+# calculate the Percentiles for each species based on entire distributon 
 
-## summary of distribution (quartiles )
-# generate function to summarise the output dittribution
 
-p <- c(.05, 0.1, 0.2,0.25, 0.5,0.75,.80, .90, .95)
-p_names <- paste0(p*100, "%")
-p_funs <- map(p, ~partial(quantile, probs = .x, na.rm = TRUE)) %>% 
-  set_names(nm = p_names)
 
+# calculate the distribution parameters : short term trends 
 
 dist_df <- df_all %>% 
   select(st_ch_pc, aou, st_pop_pc_lower, english_order)%>% 
   group_by(aou)%>% 
-  mutate(median = median(st_ch_pc))
+  mutate(median = median(st_ch_pc),
+         sd = sd(st_ch_pc))
 
-dist_df_percentiles <- dist_df %>% 
+p <- c(.05, 0.1, 0.2,0.25, 0.5,0.75,.80, .90, .95)
+
+p_names <- paste0(p*100, "%")
+p_funs <- map(p, ~partial(quantile, probs = .x, na.rm = TRUE)) %>% 
+  set_names(nm = p_names)
+
+dist_df_percentiles <-dist_df %>% 
   group_by(english_order) %>% 
   summarize_at(vars(st_ch_pc), funs(!!!p_funs))%>%
   ungroup()
 
-short_dist_df <- dist_df %>% 
+short_dist_df <- dist_df%>% 
   select(-st_ch_pc)%>% 
   distinct()%>%
   arrange(median)
 
-st_target <- left_join(short_dist_df, dist_df_percentiles)%>%
+st_sum <- left_join(short_dist_df, dist_df_percentiles)%>%
   ungroup()
 
+# group into catergories 
 
-# group into catergories - based on short term catergory 
-
-
-st_target <- st_target %>%
-  mutate(st_class_type1 = case_when(
+st_sum <- st_sum %>%
+ dplyr::mutate(st_class_type1 = case_when(
     `5%` <= -30 & `95%` >=43 ~ "uncertain",
     `75%` < st_pop_pc_lower ~ "miss",
     `25%` > st_pop_pc_lower ~ "exceed", 
@@ -176,47 +190,161 @@ st_target <- st_target %>%
     TRUE ~ "tbd"
   ))
   
-  
-  
-#select( st_lower_pc, aou, st_class_type)
+st_cat <- st_sum %>% 
+  dplyr::select(aou, st_class_type1)
 
 
 
+## Calculate the same for the long term trends 
 
-sum1 <- sum1 %>%
-  mutate(st_class_type = case_when(
-    
-    
-    `90%` < st_pop_pc_lower ~ "miss", 
-    `10%` >  st_pop_pc_lower  ~ "exceed", 
-    `75%` > st_pop_pc_lower ~ "ontrack",# wfk
-    `25%` < st_pop_pc_lower ~ "falling short",# middle 
+dist_df_lt <- df_all %>% 
+  select(lt_ch_pc, aou, lt_pop_pc_lower, english_order)%>% 
+  group_by(aou)%>% 
+  mutate(median_lt = median(lt_ch_pc))
+
+dist_df_percentiles_lt <- dist_df_lt %>% 
+  group_by(english_order) %>% 
+  summarize_at(vars(lt_ch_pc), funs(!!!p_funs))%>%
+  ungroup()
+
+long_dist_df <- dist_df_lt %>% 
+  select(-lt_ch_pc)%>% 
+  distinct()
+
+lt_sum <- left_join(long_dist_df, dist_df_percentiles_lt)%>%
+  ungroup()
+
+# group into catergories 
+
+lt_sum <- lt_sum %>%
+  mutate(lt_class_type1 = case_when(
+    `5%` <= -30 & `95%` >=43 ~ "uncertain",
+    `75%` < lt_pop_pc_lower ~ "miss",
+    `25%` > lt_pop_pc_lower ~ "exceed", 
+    `25%` < lt_pop_pc_lower & `50%`> lt_pop_pc_lower ~ "falling short",
+    `50%` < lt_pop_pc_lower & `75%`> lt_pop_pc_lower ~ "ontrack",
     TRUE ~ "tbd"
-  ))#%>% 
-  #select( st_lower_pc, aou, st_class_type)
+  ))
+  
+  lt_cat <- lt_sum %>% 
+  select(aou, lt_class_type1)
+
+
+cat <- left_join(st_cat,  lt_cat ) 
+
+# summary by both long and short 
+ cat |> 
+  group_by(st_class_type1, lt_class_type1) |> 
+  count()
+
+
+# summary by short 
+
+st <- cat |> 
+  group_by(st_class_type1) |> 
+  count() |> 
+  ungroup() |> 
+  mutate(tot =sum(n)) |> 
+  rowwise() |> 
+  mutate(pc = round((n / tot)*100,0)) %>% 
+  mutate(type = "short-term") %>% 
+  mutate(class = st_class_type1)
+
+# summary by long
+lt <- cat |> 
+  group_by(lt_class_type1) |> 
+  count() |> 
+  ungroup() |> 
+  mutate(tot =sum(n)) |> 
+  rowwise() |> 
+  mutate(pc = round((n / tot)*100,0)) %>% 
+  mutate(type = "long-term")%>% 
+  mutate(class = lt_class_type1)
+
+
+cat_long <- bind_rows(st, lt)
+
+
+# generate summary plots 
+
+
+ggplot(cat_long, aes(y = pc, class, fill = factor(type, levels = c("short-term", "long-term"))))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.9,)+
+  #geom_col(position = position_stack(reverse = TRUE))
+  scale_x_discrete(limits = c("miss", "falling short", "ontrack","exceed", "uncertain" )) +
+  geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.55)+
+  scale_fill_grey()+
+  labs(y = "percent of species")+
+  theme_bw()+
+  theme(
+    axis.title.x = element_blank(),
+    legend.title = element_blank()
+    #axis.text.x = element_blank(),
+    #axis.ticks.x = element_blank()
+  )
+
+
+ggsave(file.path("03_summary", "st_allsp_percent_catergory.jpg"),
+       width = 30,
+       height = 20,
+       units = c("cm"),
+       dpi = 300)
 
 
 
 
+
+
+
+
+
+
+df_all <- left_join(df_all, cat)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#################################################################
+
+## Grahics 
+
+######################################################################
+
+
+
+
+#write.csv(st_sum, "test.csv")
+
+# update this line for each seperate plot 
+
+#plottype = "red"  # "red", "d"
+
+df <- df_all %>%
+  #filter(pif_rank == plottype)
+  left_join(st_sum) |> 
+  filter(st_class_type1 == "miss")
+
+# edits 
 
 
 
 
 bg_color <- "grey97"
 font_family <- "Fira Sans"
-
-
-# update this line for each seperate plot 
-
-#plottype = "d"  # "r", "d"
-
-df <- df_all %>% 
-  filter(pif_rank == plottype)
-
-
-# edits 
-
-
 
 
 ### PLots continued 
@@ -464,49 +592,6 @@ ggsave(file.path("03_summary", paste0(plottype, "_listed_sp_lt.jpg")),
 
 
   
-
-
-library(dplyr)
-library(ggplot2)
-library(distributional)
-
-theme_set(theme_ggdist())
-
-# ON SAMPLE DATA
-set.seed(1234)
-df = data.frame(
-  group = c("a", "b", "c"),
-  value = rnorm(1500, mean = c(5, 7, 9), sd = c(1, 1.5, 1))
-)
-df %>%
-  ggplot(aes(x = value, y = group)) +
-  stat_interval() +
-  scale_color_brewer()
-
-# ON ANALYTICAL DISTRIBUTIONS
-dist_df = data.frame(
-  group = c("a", "b", "c"),
-  mean =  c(  5,   7,   8),
-  sd =    c(  1, 1.5,   1)
-)
-# Vectorized distribution types, like distributional::dist_normal()
-# and posterior::rvar(), can be used with the `xdist` / `ydist` aesthetics
-dist_df %>%
-  ggplot(aes(y = group, xdist = dist_normal(mean, sd))) +
-  stat_interval() +
-  scale_color_brewer()
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
