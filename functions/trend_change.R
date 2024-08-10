@@ -32,6 +32,11 @@ trend_change <- function(
     stop("target year is not within input data, please re-select")
   }
   
+  if(targ_year < ref_year){
+    stop("referecne year occurs after target year, please re-select")
+  }
+  
+  
   # from bbsbayes2 get trend function
   calc_prob_crease <- function(x, p, type = "decrease") {
     if(type == "decrease") f <- function(p) length(x[x < (-1 * p)]) / length(x)
