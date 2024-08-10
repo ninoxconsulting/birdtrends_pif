@@ -4,6 +4,7 @@ library(dplyr)
 library(readr)
 library(janitor)
 library(bbsBayes2)
+devtools::install_github("ninoxconsulting/birdtrends")
 library(birdtrends)
 library(ggplot2)
 library(doParallel)
@@ -43,7 +44,7 @@ pif_rank <- pifs |> select(aou, english, pif_rank)
 # get the percentage values of meeting the short-term 
 
 target_achieve = foreach(i= mraou, .combine=rbind )%dopar%{
-  i = mraoul[1]
+  #i = mraoul[1]
   
   mtemp = readRDS(file.path(outputs, i , paste0(i , "_outputs.rds"))) 
   st <- mtemp$prob_st
@@ -80,13 +81,13 @@ ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
   xlab("long term percentage") +
   geom_text_repel(size = 2, colour = "grey26",min.segment.length = 0, seed = 42, box.padding = 0.5)
 
-
-ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
-       width = 30,
-       height = 20,
-       units = c("cm"),
-       dpi = 300)
-
+# 
+# ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
+#        width = 30,
+#        height = 20,
+#        units = c("cm"),
+#        dpi = 300)
+# 
 
 
 
@@ -96,20 +97,12 @@ ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
 
 ## Part 2
 
-## Summarise how the distribution matches to the targets and catergortise into groups. 
-
-# keep entire distribution of the plots 
+## Summarise how the distribution matches to the targets and categorization into groups. 
 
 
-
-### need to review this as something no longer workfinh with Calc_probs function... check idf
-# in the package or if need to use the one in this package under ":functions" folder. 
-
-
-
-all_dist = foreach(i= mraou, .combine=rbind )%dopar%{
+all_dist = foreach(i= mraou, .combine=rbind)%dopar%{
   
-  #i = mraou[1]
+ # i = mraou[1]
   
   mtemp = readRDS(file.path(outputs, i , paste0(i , "_outputs.rds"))) 
   
@@ -138,7 +131,7 @@ all_dist = foreach(i= mraou, .combine=rbind )%dopar%{
   
 # combine the data with the metadata about the species   
 
-df_all <- all_dist  %>% 
+df_all <- all_dist %>% 
   left_join(pifs) %>% 
   select(-unid_combined, -spcode) %>% 
   group_by(aou) |> 
@@ -185,8 +178,8 @@ st_sum <- st_sum %>%
     `5%` <= -30 & `95%` >=43 ~ "uncertain",
     `75%` < st_pop_pc_lower ~ "miss",
     `25%` > st_pop_pc_lower ~ "exceed", 
-    `25%` < st_pop_pc_lower & `50%`> st_pop_pc_lower ~ "falling short",
-    `50%` < st_pop_pc_lower & `75%`> st_pop_pc_lower ~ "ontrack",
+    `25%` < st_pop_pc_lower & `50%`> st_pop_pc_lower ~ "ontrack",
+    `50%` < st_pop_pc_lower & `75%`> st_pop_pc_lower ~ "falling short",
     TRUE ~ "tbd"
   ))
   
@@ -221,16 +214,20 @@ lt_sum <- lt_sum %>%
     `5%` <= -30 & `95%` >=43 ~ "uncertain",
     `75%` < lt_pop_pc_lower ~ "miss",
     `25%` > lt_pop_pc_lower ~ "exceed", 
-    `25%` < lt_pop_pc_lower & `50%`> lt_pop_pc_lower ~ "falling short",
-    `50%` < lt_pop_pc_lower & `75%`> lt_pop_pc_lower ~ "ontrack",
+    `25%` < lt_pop_pc_lower & `50%`> lt_pop_pc_lower ~ "ontrack",
+    `50%` < lt_pop_pc_lower & `75%`> lt_pop_pc_lower ~ "falling short",
     TRUE ~ "tbd"
   ))
   
-  lt_cat <- lt_sum %>% 
+lt_cat <- lt_sum %>% 
   select(aou, lt_class_type1)
 
-
+# generate both short and long term with species names
 cat <- left_join(st_cat,  lt_cat ) 
+
+
+
+
 
 # summary by both long and short 
  cat |> 
@@ -265,8 +262,7 @@ lt <- cat |>
 cat_long <- bind_rows(st, lt)
 
 
-# generate summary plots 
-
+# generate overview summary plots 
 
 ggplot(cat_long, aes(y = pc, class, fill = factor(type, levels = c("short-term", "long-term"))))+
   geom_bar(stat = "identity", position = "dodge", width = 0.9,)+
@@ -283,7 +279,6 @@ ggplot(cat_long, aes(y = pc, class, fill = factor(type, levels = c("short-term",
     #axis.ticks.x = element_blank()
   )
 
-
 ggsave(file.path("03_summary", "st_allsp_percent_catergory.jpg"),
        width = 30,
        height = 20,
@@ -296,17 +291,21 @@ ggsave(file.path("03_summary", "st_allsp_percent_catergory.jpg"),
 
 
 
-
-
+## Get the full list of species and category 
 
 df_all <- left_join(df_all, cat)
 
 
 
+# get list of species for each catergory 
 
 
+sp_class <- df_all |> 
+  select(aou, english, st_class_type1, lt_class_type1) |> 
+  unique()%>% 
+  arrange(st_class_type1, lt_class_type1, aou)
 
-
+write.csv(sp_class, file.path("03_summary", "species_class.csv"))
 
 
 
@@ -320,7 +319,7 @@ df_all <- left_join(df_all, cat)
 
 #################################################################
 
-## Grahics 
+## Grahics with full distribution 
 
 ######################################################################
 
@@ -332,15 +331,17 @@ df_all <- left_join(df_all, cat)
 # update this line for each seperate plot 
 
 #plottype = "red"  # "red", "d"
+classtype = "miss" #"exceed"  #"miss"  #"exceed"     "falling short"     "ontrack"       "uncertain"    
+
+
+df_for_legend <- df_all  %>% 
+  filter(english == "Lesser Prairie-Chicken")
+
 
 df <- df_all %>%
   #filter(pif_rank == plottype)
   left_join(st_sum) |> 
-  filter(st_class_type1 == "miss")
-
-# edits 
-
-
+  filter(st_class_type1 == classtype)
 
 
 bg_color <- "grey97"
@@ -349,15 +350,15 @@ font_family <- "Fira Sans"
 
 ### PLots continued 
 
-
 p <- df %>%
   ggplot(aes(x =  st_ch_pc, y = english_order)) +
   stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
   #stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
-  stat_interval() +
+  stat_interval(.width = c(0.5, 0.75, 0.95)) +
   #scale_y_discrete(labels = toupper) +
-  scale_x_continuous(breaks = seq(-100, 100,100)) +
-  xlim(-100, 250) +
+  scale_x_continuous(breaks = seq(-100, 100, 100)) +
+  #xlim(-100, 250) + # exceed
+  xlim(-100, 120) +
   geom_point(data = df, aes(x = st_pop_pc_lower, y = as.factor(english)))+
   geom_point(data = df, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
@@ -382,21 +383,22 @@ p <- df %>%
     ),
     plot.caption.position = "plot",
     axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
-    plot.margin = margin(4, 4, 4, 4) 
+    plot.margin = margin(4, 4, 4, 4),
+    axis.text=element_text(size=12)
     )
 
 
-
-if(plottype == "red"){
+if(classtype == "exceed"){
+#if(plottype == "red"){
 
 # create the dataframe for the legend (inside plot)
-df_for_legend <- df %>% 
-  filter(english == "Lesser Prairie-Chicken")
+#df_for_legend <- df %>% 
+#  filter(english == "Lesser Prairie-Chicken")
 
 p_legend <- df_for_legend %>% 
   ggplot(aes(x = st_ch_pc, y = as.factor(english))) +
   stat_halfeye(fill_type = "segments", alpha = 0.3) +
-  stat_interval() +
+  stat_interval( .width = c(0.5, 0.75, 0.95)) +
   #scale_y_discrete(labels = toupper) +
   #scale_x_continuous(breaks = seq(-100, 100,100)) +
   xlim(-90, 100)+
@@ -406,9 +408,9 @@ p_legend <- df_for_legend %>%
   annotate(
     "richtext",
     y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.85),
-    x= c(-60, 65, 10, 5, 55, 45),
-    label = c("50 % of predictions<br>fall within this range", "95 % of projections", 
-              "80 % of projections", "lower target", "upper target","Distribution<br>of projections"),
+    x= c(-60, 65, 20, 5, 55, 45),
+    label = c("50 % of projections <br>fall within this range", "95 % of <br>projections", 
+              "75 % of <br> projections", "lower target", "upper target","Distribution<br>of projections"),
     fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
   ) +
   geom_curve(
@@ -445,15 +447,34 @@ p_legend <- df_for_legend %>%
 # Insert the custom legend into the plot
 p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.75, clip = FALSE)
 
-
 }
 
 p
 
 
-ggsave(file.path("03_summary", paste0(plottype, "_listed_sp.jpg")), 
-       width = 30,
-       height = 40,
+if (classtype == "exceed") { 
+  pwidth = 30  
+  pheight = 35
+}
+
+if (classtype == "falling short") { 
+  pwidth = 30  
+  pheight = 25
+}
+
+if (classtype == "ontrack") { 
+  pwidth = 30  
+  pheight = 15
+}
+
+if (classtype == "miss") { 
+  pwidth = 30  
+  pheight = 35
+}
+
+ggsave(file.path("03_summary", paste0(classtype, "_listed_sp.jpg")), 
+       width = pwidth,
+       height = pheight,
        units = c("cm"),
        dpi = 300)
 
