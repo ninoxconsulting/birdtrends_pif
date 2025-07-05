@@ -2,15 +2,13 @@
 # Note this data set is the baysian posterier distribution, not smooths as completed
 # for other species. Hence different method used. 
 
-
-library(dplyr)
-library(janitor)
-devtools::install_github("ninoxconsulting/birdtrends")
+devtools::install_github("ninoxconsulting/birdtrends", ref= "annual_trend_projections" )
 library(bbsBayes2)
 library(birdtrends)
 library(ggplot2)
 library(readr)
-
+library(dplyr)
+library(janitor)
 # notes files received directly from Audbon and downlowed on a locatl copy. A copy of the data 
 # is saved on the main google drive. Due to the number f files this is not currently automated in the 
 # script and can be done manually. 
@@ -43,7 +41,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  #i = aous[1]
+ # i = aous[1]
   
   aou_id <- i
   
@@ -67,7 +65,7 @@ for(i in aous){
     if (!dir.exists(dir)) dir.create(dir)
     
     # loading the fitted model object
-    fit <- read_csv(aou_file)
+    fit <- read_csv(aou_file, show_col_types = FALSE)
     
     # format the files to a suitable method 
     
@@ -84,6 +82,20 @@ for(i in aous){
     # option 2: Fit GAM to each draw : data input type 2
     
     fitted_data <- fit_gam(t)
+    
+#    > fitted_data
+#    # A tibble: 560,000 × 3
+#    draw  year   proj_y
+#    <int> <int>    <dbl>
+#      1     1  1966 3120130.
+#    2     1  1967 3017288.
+#    3     1  1968 2921924.
+#    4     1  1969 2838121.
+#    5     1  1970 2768596.
+    
+    
+    
+    
   #   fitted_data_wide <- fit_gam(t, longform = FALSE)
   #   
   #   sel_hgams <- fitted_data_wide %>%
@@ -133,8 +145,26 @@ for(i in aous){
 #   
   
 
-trend_sm <- get_trend(fitted_data , start_yr = 2014, end_yr = 2022, method = "gmean")
+#trend_sm <- get_trend(fitted_data , start_yr = 2014, end_yr = 2022, method = "gmean")
+trend_sm <- get_trend(fitted_data , start_yr = 2014, end_yr = 2021, method = "gmean", annual_variation = FALSE)
 
+    
+#    draw trend_log perc_trend
+#    <int>     <dbl>      <dbl>
+#      1     1  -0.0425      -4.16 
+#    2     2  -0.0101      -1.00 
+#    3     3  -0.0114      -1.13 
+    
+#NEW version
+#draw trend_log perc_trend trend_start_year trend_end_year
+#<int>     <dbl>      <dbl>            <dbl>          <dbl>
+#  1     1  -0.0425      -4.16              2014           2021
+#2     2  -0.0101      -1.00              2014           2021
+#3     3  -0.0114      -1.13              2014           2021
+#4     4  -0.0108      -1.07              2014           2021
+#5     5  -0.00926     -0.922             2014           2021
+    
+    
 
 ######################################################################
 # 4. predict trend 
@@ -142,17 +172,49 @@ trend_sm <- get_trend(fitted_data , start_yr = 2014, end_yr = 2022, method = "gm
 
 preds_sm <- proj_trend(fitted_data, trend_sm, start_yr = 2022, proj_yr = 2050)
 
+#    > preds_sm 
+#    # A tibble: 850,000 × 4
+#    draw  year   proj_y pred_ind
+#    <int> <dbl>    <dbl>    <dbl>
+#      1     1  1966 3120130. 3120130.
+#    2     1  1967 3017288. 3017288.
+#    3     1  1968 2921924. 2921924.
+#    4     1  1969 2838121. 2838121.
+#    5     1  1970 2768596. 2768596.    
+    
+    
+    
+# > head(preds_sm)
+# draw year trend_end_year    trend_log perc_trend trend_start_year  proj_y
+# 1    1 1966           2021 -0.042523266 -4.1631832             2014 3120130
+# 2    2 1966           2021 -0.010075209 -1.0024624             2014 2614742
+# 3    3 1966           2021 -0.011403699 -1.1338924             2014 2784599
+# 4    4 1966           2021 -0.010794054 -1.0736007             2014 2696888
+# 5    5 1966           2021 -0.009262627 -0.9219861             2014 2865505
+# 6    6 1966           2021 -0.009625319 -0.9579144             2014 3363375
+    # starting_pred_ind pred_ind
+    # 1           1229435  3120130
+    # 2           1349836  2614742
+    # 3           1235278  2784599
+    # 4           1225231  2696888
+    # 5           1206272  2865505
+    # 6           1160341  3363375    
+    # 
+    
+    
+    
+    
 ######################################################################
 # 5. plot graphs 
 ##########################################################
-
-smooth_plot <- plot_trend(raw_indices = NULL,
-                          model_indices = fitted_data,
-                          pred_indices = preds_sm,
-                          start_yr = 2014,
-                          end_yr = 2021)
-
-smooth_plot
+# 
+# smooth_plot <- plot_trend(raw_indices = NULL,
+#                           model_indices = fitted_data,
+#                           pred_indices = preds_sm,
+#                           start_yr = 2014,
+#                           end_yr = 2021)
+# 
+# smooth_plot
 
 
 ###########################################
@@ -165,7 +227,7 @@ trend_sm_summary <- trend_sm  %>%
             annualpc_q_0.975 = quantile(perc_trend,0.975))
 
 
-trend_sm_summary 
+#trend_sm_summary 
 
 
 ## Get the predicted trends from the excel sheet 
@@ -188,10 +250,13 @@ sm_plot_target <- plot_trend(raw_indices = NULL,
                              start_yr = 2014, 
                              end_yr = 2021, 
                              ref_yr = 2014,
-                             targets = index_baseline)
+                             targets = index_baseline,
+                             set_upperlimit = TRUE,
+                             upperlimit = 1.5,
+                             annual_variation = FALSE)
 
 
-sm_plot_target <- sm_plot_target + ggplot2::labs(title =   english_name)
+sm_plot_target <- sm_plot_target + ggplot2::labs(title = english_name)
 saveRDS(sm_plot_target, file.path(dir, paste0("trend_",aou_id,"_plot.rds")))
 
 # 
@@ -236,10 +301,29 @@ prob_lt <- calculate_probs(projected_trends = preds_sm,
                            prob_decrease = NULL, 
                            prob_increase = lt_inc_dec) 
 
+#short term trends
+trend_st <- trend_change(projected_trends = preds_sm,
+                         ref_year = 2014, 
+                         targ_year = 2026) |> 
+  select(ch_pc) |> 
+  mutate(aou = i) |> 
+  rename("st_ch_pc" = ch_pc)
 
 
-outdata <- list(fitted_data, trend_sm, preds_sm,  targ, index_baseline, prob_st, prob_lt)
-names(outdata)<- c("fitted_data", "trend_sm", "pred_sm", "targ", "index_baseline", "prob_st", "prob_lt")
+# long term trends
+trend_lt <- trend_change(projected_trends = preds_sm, ref_year = 2014, targ_year = 2046) |> 
+  select(ch_pc) |> 
+  mutate(aou = i) |> 
+  rename("lt_ch_pc" = ch_pc)
+
+
+trends <- cbind( trend_st ,  trend_lt ) 
+trends <- trends[,-4]
+#probs
+
+
+outdata <- list(fitted_data, trend_sm, preds_sm,  targ, index_baseline, trends, prob_st, prob_lt  )
+names(outdata)<- c("fitted_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "trends", "prob_st", "prob_lt")
 
 
 saveRDS(outdata, file.path(dir, paste0(aou_id,"_outputs.rds")))

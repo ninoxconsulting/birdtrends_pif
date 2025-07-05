@@ -1,16 +1,27 @@
 ---
 title: "Partners in Flight Trends"
+subtitle: "Evaluating progress towards 2016 North American Landbird Plan population trend objectives"
 author: "Gen Perkins"
-date: "2024-04-30"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
+## Overview
 
-We estimated the trends for 63 bird species identified on the "Watch List" under the 2016 PIF Land Bird Conservation Plan. This included; 
+We estimated how 62 bird species identified on the "Watch List" under the 2016 Partners in Flight (PIF) Land Bird Conservation Plan were tracking relative to targets set in 2014. Short term targets (2026) and long term targets were assessed. 
+
+We estimated trends for each species accounting for the full posterior distribution of each bird model. We used these trends to project into the future, assuming a constant rate of change. These projections are naive to cyclical population dynamics and other drivers and should be considered as a potential indication as to how species are tracking relative to set targets. 
+
+
+
+
+## Methods 
+
+We estimated the projected trends for 62 bird species identified on the "Watch List" under the 2016 PIF Land Bird Conservation Plan. This included; 
 
 - Red watch list : Species with extremely high vulnerability due to small population and range, high threats, and range wide declines. Aim to recover these species (n = 12).
 
@@ -19,7 +30,12 @@ We estimated the trends for 63 bird species identified on the "Watch List" under
 - Yellow Watch List (D): Reverse decline (n = 45)
 
 
-For each of the species, we used best available data to estimate the trend and predict into the future. Input data types include: 
+For each species, we used the best available data to assess how the species are tracking relative to PIF targets for short and long term trends. That is the change in annual indices (mean count) from 2014 onwards while accounting for uncertainty. 
+
+To estimate the changes in trends we firstly assessed the change since 2014 to last data available (2021 or 2022). We then calculated this trend and projected the trend into the future. These projected trends are naive to the complexity of population dynamics, and represent an assumed constant rate of change into the future based on the estimated trend. While we maintained the full distribution of projections, to provide a range of uncertainty, these projected trends should be viewed with the limitations in mind. 
+
+
+Input data types include: 
 1) modeled smooths drawn from the GAMYE model using outputs derived from the bbsBayes2 package (n = 58).
 2) posterior draws drawn from continental wide annual indices estimates (n = 4) 
 
@@ -29,39 +45,91 @@ For each year, the observed indices and error bars are shown in grey up to 2022.
 
 For each species a trend was determined using the estimated smooth line between 2014 and 2022, or trend estimated using gams of posterior distributions between 2014 and 2021. These dates were chosen to represent the trend from the date at which targets were determined to best available data. A solid grey vertical line is set to 2014. 
 
-This trend was then predicted into the future as defined by the red line with associated confidence intervals (orange ribbon) up to 2050. 
+This trend was then projected into the future as defined by the red line with associated confidence intervals (orange ribbon) up to 2050. 
 
 The 2016 PIF Land Bird Conservation Plan defined percent change targets for each species for both a short term (2026) and long term goals (2046). These time periods are denoted by a hashed grey line. For each of these time periods, blue error bars represents the target range for a given species. A blue line represents an estimated trajectory required for a bird to achieve these targets is also included for context.
 
 
-```{r cars, echo = FALSE}
+## Results 
+
+We grouped the species by increasing and decreasing projected trends relative to targets. Eight species were deemed too uncertain to estimate their trends, as the projected values represented both a 30% decline AND 43% increase. 
+
+A full review of the species is available in the accompanying report and publication is in preparation. 
+
+
+## Species with increasing trends relative to targets
+
+
+```{r cars, echo = FALSE, message = FALSE, warning=FALSE}
 
 library(jpeg)
+library(magrittr)
+library(dplyr)
+library(stringr)
 
+list_of_species <- read.csv(file.path("03_summary", "species_class.csv"))
+                                
+inc <- list_of_species %>%  dplyr::filter(st_class_type1 %in% c("exceed", "ontrack"))%>% pull(aou)
+dec <- list_of_species %>%  dplyr::filter(st_class_type1 %in% c("falling short", "miss"))%>% pull(aou)
+unc <- list_of_species %>%  dplyr::filter(st_class_type1 == "uncertain")%>% pull(aou)
+                            
 files <- list.files(file.path("02_outputs"), recursive = T, pattern = "plot.rds")
 
+
+```
+
+```{r, increasing species, echo = FALSE}
 for(i in files){
   
-  #i = files[2]
+  id <- str_sub(i, 1,4)
+  if(id %in% inc){
   
  aa <-  readRDS(file.path("02_outputs", i))
  plot(aa)
- 
+  }
+}
+
+```
+
+
+## Species with decreasing trends relative to targets
+
+```{r, decreasing species, echo = FALSE}
+for(i in files){
+  
+  id <- str_sub(i, 1,4)
+  if(id %in% dec){
+  
+ aa <-  readRDS(file.path("02_outputs", i))
+ plot(aa)
+  }
 }
 
 ```
 
 
 
-```{r acknowledgement, echo = FALSE}
-# 
-# Acknowledgments: 
-# 
-# - Adam Smith - running initial bird, statistical advice and draft review. 
-# - Becky Stewert - project guidance 
-# - Dave illes and Marcel - code developkment for collaborative projects. 
-# 
-# - Creators of bbsBayes package - code 
+
+### Species with uncertain trends
+
+
+```{r, uncertain, echo = FALSE}
+for(i in files){
+  
+  id <- str_sub(i, 1,4)
+  if(id %in% unc){
+  
+ aa <-  readRDS(file.path("02_outputs", i))
+ plot(aa)
+  }
+}
 
 ```
+
+
+### Acknowledgements 
+
+This work as funded by Environment and Climate Change Canada led by Becky Stewart. Special thanks to Adam Smith, David lles and Marcel Gahbauer for providing statistical advice, sharing code and reviewing the data products. 
+
+Thank-you to Adam Smith for generating and re-running individual North American Breeding Bird Survey models which formed most input data for the analysis. Tim Meehan from Audubon provided modelled outputs for four additional species. 
 

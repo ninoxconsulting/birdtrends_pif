@@ -81,17 +81,13 @@ ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
   xlab("long term percentage") +
   geom_text_repel(size = 2, colour = "grey26",min.segment.length = 0, seed = 42, box.padding = 0.5)
 
-# 
+
 # ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
 #        width = 30,
 #        height = 20,
 #        units = c("cm"),
 #        dpi = 300)
 # 
-
-
-
-
 
 
 
@@ -102,31 +98,13 @@ ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
 
 all_dist = foreach(i= mraou, .combine=rbind)%dopar%{
   
- # i = mraou[1]
+  #i = mraou[1]
   
   mtemp = readRDS(file.path(outputs, i , paste0(i , "_outputs.rds"))) 
   
-  targ <-  mtemp$targ
-  preds_sm <- mtemp$pred_sm
-  
-  # short term
-  probs_st <- trend_change(projected_trends = preds_sm, ref_year = 2014, targ_year = 2026) |> 
-    select(ch_pc) |> 
-    mutate(aou = i) |> 
-    rename("st_ch_pc" = ch_pc)
-  
-  
-  # long term trends
-  probs_lt <- trend_change(projected_trends = preds_sm, ref_year = 2014, targ_year = 2046) |> 
-    select(ch_pc) |> 
-    mutate(aou = i) |> 
-    rename("lt_ch_pc" = ch_pc)
-  
-  
-  probs <- cbind(probs_st , probs_lt ) 
-  probs <- probs[,-4]
-  probs
-  
+  trends <-  mtemp$trends
+  trends
+ 
 } 
   
 # combine the data with the metadata about the species   
@@ -306,13 +284,6 @@ sp_class <- df_all |>
   arrange(st_class_type1, lt_class_type1, aou)
 
 write.csv(sp_class, file.path("03_summary", "species_class.csv"))
-
-
-
-
-
-
-
 
 
 
@@ -612,7 +583,46 @@ ggsave(file.path("03_summary", paste0(plottype, "_listed_sp_lt.jpg")),
 
 
 
+###########################################################
+# update output-plots
+
+library(jpeg)
+library(magrittr)
+library(dplyr)
+library(stringr)
+
+
+files <- list.files(file.path("02_outputs"), recursive = T, pattern = "plot.rds")
+
+for(i in files){
+   #i = files[1]
   
+    filename <- str_sub(i, 1,4)
+    
+    
+    aa <-  readRDS(file.path("02_outputs", i))
+    plot(aa)
+    
+    
+    ggsave(file.path("02_outputs", filename, paste0("trend_plot_",filename, "_v2.jpg")), 
+           width = 25,
+           height = 20,
+           units = c("cm"),
+           dpi = 300)
+    
+    
+  }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

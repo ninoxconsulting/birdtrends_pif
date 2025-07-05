@@ -6,7 +6,7 @@ library(googledrive)
 library(dplyr)
 library(readr)
 library(janitor)
-#devtools::install_github("ninoxconsulting/birdtrends")
+devtools::install_github("ninoxconsulting/birdtrends", ref= "annual_trend_projections" )
 library(bbsBayes2)
 library(birdtrends)
 library(ggplot2)
@@ -122,7 +122,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  #i = aous[1]
+  #i = aous[2]
 
   aou_id <- i
   
@@ -146,7 +146,7 @@ for(i in aous){
     indsmooth <- generate_indices(fit,regions = "continent",
                                   alternate_n = "n_smooth")
     
-    plot_indices(inds)
+    #plot_indices(inds)
     
     # Input option 1 - annual indices of relative abundance with CI estimates
     # data-frame with at a minimum, columns - we will use this for our plots 
@@ -212,7 +212,7 @@ for(i in aous){
     #   ldf_smooths, start_yr = 2014, end_yr = 2022, method = "gmean")
     # 
       
-      trend_sm <- get_trend(fitted_smooths, start_yr = 2014, end_yr = 2022, method = "gmean")
+      trend_sm <- get_trend(fitted_smooths, start_yr = 2014, end_yr = 2022, method = "gmean", annual_variation = FALSE)
       
       ######################################################################
       # 4. predict trend 
@@ -244,9 +244,7 @@ for(i in aous){
                   annualpc_q_0.975 = quantile(perc_trend,0.975))
       
       
-      trend_sm_summary 
-      
-      
+      #trend_sm_summary 
       
       ## Get the predicted targets from the excel sheet 
       targ <- pifs |>  filter(aou == aou_id)
@@ -268,7 +266,10 @@ for(i in aous){
                                       start_yr = 2014, 
                                       end_yr = 2022, 
                                       ref_yr = 2014,
-                                      targets = index_baseline)
+                                      targets = index_baseline,
+                                      set_upperlimit = TRUE,
+                                      upperlimit = 1.5,
+                                      annual_variation = FALSE)
       
       
       sm_plot_target <- sm_plot_target + ggplot2::labs(title = fit$meta_data$species)
@@ -301,26 +302,42 @@ for(i in aous){
         pull()
       
       
-      # note need to figure out a way to automate these plots 
-      
-      
+      # shortterm probability
       prob_st <- calculate_probs(projected_trends = preds_sm,
                       ref_year = 2014, 
                       targ_year = 2026, 
                       prob_decrease = NULL, 
                       prob_increase = st_inc_dec)
       
-      
+      # longterm probability
       prob_lt <- calculate_probs(projected_trends = preds_sm,
                                  ref_year = 2014, 
                                  targ_year = 2046, 
                                  prob_decrease = NULL, 
                                  prob_increase = lt_inc_dec) 
+      #short term trends
+      trend_st <- trend_change(projected_trends = preds_sm,
+                                 ref_year = 2014, 
+                                 targ_year = 2026) |> 
+        select(ch_pc) |> 
+        mutate(aou = i) |> 
+        rename("st_ch_pc" = ch_pc)
       
-    
       
-      outdata <- list(fitted_smooths, trend_sm, preds_sm,  targ, index_baseline, prob_st, prob_lt  )
-      names(outdata)<- c("fitted_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "prob_st", "prob_lt")
+      # long term trends
+      trend_lt <- trend_change(projected_trends = preds_sm, ref_year = 2014, targ_year = 2046) |> 
+        select(ch_pc) |> 
+        mutate(aou = i) |> 
+        rename("lt_ch_pc" = ch_pc)
+      
+      
+      trends <- cbind( trend_st ,  trend_lt ) 
+      trends <- trends[,-4]
+      #probs
+      
+      
+      outdata <- list(fitted_smooths, trend_sm, preds_sm,  targ, index_baseline, trends, prob_st, prob_lt  )
+      names(outdata)<- c("fitted_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "trends", "prob_st", "prob_lt")
       
       
       saveRDS(outdata, file.path(dir, paste0(aou_id,"_outputs.rds")))
