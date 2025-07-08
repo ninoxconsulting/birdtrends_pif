@@ -4,11 +4,13 @@ library(dplyr)
 library(readr)
 library(janitor)
 library(bbsBayes2)
-devtools::install_github("ninoxconsulting/birdtrends")
+
+devtools::install_github("ninoxconsulting/birdtrends", ref= "annual_trend_projections" )
 library(birdtrends)
+extrafont::loadfonts(device="win")
 library(ggplot2)
-library(doParallel)
-library(foreach) 
+#library(doParallel)
+#library(foreach) 
 library(ggrepel)
 library(tidyverse)
 library(ggtext)
@@ -42,9 +44,10 @@ pif_rank <- pifs |> select(aou, english, pif_rank)
 
 
 # get the percentage values of meeting the short-term 
-
-target_achieve = foreach(i= mraou, .combine=rbind )%dopar%{
-  #i = mraoul[1]
+  
+target_achieve = purrr::map(mraou, function(i){  
+  
+  #i = mraou[1]
   
   mtemp = readRDS(file.path(outputs, i , paste0(i , "_outputs.rds"))) 
   st <- mtemp$prob_st
@@ -62,8 +65,7 @@ target_achieve = foreach(i= mraou, .combine=rbind )%dopar%{
   #out <- left_join(out, pif_rank) 
   out
 
-}
-
+}) |> bind_rows()
 
 target_achieve <- left_join(target_achieve, pif_rank)
 
@@ -71,15 +73,15 @@ target_achieve <- left_join(target_achieve, pif_rank)
 
 #ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc))+
 #  geom_jitter(width = 1, aes(colour = pif_rank), size = 3) + scale_colour_viridis_d()
-
-ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
-  geom_point(aes(colour = pif_rank), alpha = 0.6, size = 2.5) + 
-  #geom_text(hjust=-0.2, vjust=0, colour = "darkgrey", size = 2.5)+
-  scale_colour_viridis_d()+
-  theme_bw()+ 
-  ylab("short term percentage") + 
-  xlab("long term percentage") +
-  geom_text_repel(size = 2, colour = "grey26",min.segment.length = 0, seed = 42, box.padding = 0.5)
+# 
+# ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
+#   geom_point(aes(colour = pif_rank), alpha = 0.6, size = 2.5) + 
+#   #geom_text(hjust=-0.2, vjust=0, colour = "darkgrey", size = 2.5)+
+#   scale_colour_viridis_d()+
+#   theme_bw()+ 
+#   ylab("short term percentage") + 
+#   xlab("long term percentage") +
+#   geom_text_repel(size = 2, colour = "grey26",min.segment.length = 0, seed = 42, box.padding = 0.5)
 
 
 # ggsave(file.path("03_summary", "allsp_percent_summary.jpg"),
@@ -95,22 +97,19 @@ ggplot(target_achieve, aes(y = st_lower_pc, x = lt_lower_pc, label = english))+
 
 ## Summarise how the distribution matches to the targets and categorization into groups. 
 
-
-all_dist = foreach(i= mraou, .combine=rbind)%dopar%{
-  
-  #i = mraou[1]
+all_dist = purrr::map(mraou, function(i){  
+ # i = mraou[1]
   
   mtemp = readRDS(file.path(outputs, i , paste0(i , "_outputs.rds"))) 
-  
   trends <-  mtemp$trends
   trends
  
-} 
+}) |> bind_rows()
   
-# combine the data with the metadata about the species   
+# combine the data with the metadata about the species - short term trend
 
-df_all <- all_dist %>% 
-  left_join(pifs) %>% 
+df_all <- all_dist |>  
+  left_join(pifs) |> 
   select(-unid_combined, -spcode) %>% 
   group_by(aou) |> 
   mutate(median = median(st_ch_pc)) %>% 
@@ -119,7 +118,6 @@ df_all <- all_dist %>%
   
 
 # calculate the Percentiles for each species based on entire distributon 
-
 
 
 # calculate the distribution parameters : short term trends 
@@ -161,6 +159,8 @@ st_sum <- st_sum %>%
     TRUE ~ "tbd"
   ))
   
+#write.csv(st_sum, file.path("st_sum_test.csv"), row.names = FALSE)
+
 st_cat <- st_sum %>% 
   dplyr::select(aou, st_class_type1)
 
@@ -237,13 +237,15 @@ lt <- cat |>
   mutate(class = lt_class_type1)
 
 
-cat_long <- bind_rows(st, lt)
+cat_long <- bind_rows(st, lt) |> 
+  select(-st_class_type1, -lt_class_type1) |> 
+complete(type, class  , fill = list(n = 0))
 
 
 # generate overview summary plots 
 
 ggplot(cat_long, aes(y = pc, class, fill = factor(type, levels = c("short-term", "long-term"))))+
-  geom_bar(stat = "identity", position = "dodge", width = 0.9,)+
+  geom_bar(stat = "identity", position = position_dodge(preserve="single"), width = 0.9,)+
   #geom_col(position = position_stack(reverse = TRUE))
   scale_x_discrete(limits = c("miss", "falling short", "ontrack","exceed", "uncertain" )) +
   geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.55)+
@@ -262,7 +264,6 @@ ggsave(file.path("03_summary", "st_allsp_percent_catergory.jpg"),
        height = 20,
        units = c("cm"),
        dpi = 300)
-
 
 
 
@@ -302,7 +303,7 @@ write.csv(sp_class, file.path("03_summary", "species_class.csv"))
 # update this line for each seperate plot 
 
 #plottype = "red"  # "red", "d"
-classtype = "miss" #"exceed"  #"miss"  #"exceed"     "falling short"     "ontrack"       "uncertain"    
+classtype = "exceed"   #"miss"  #"exceed"     "falling short"     "ontrack"       "uncertain"    
 
 
 df_for_legend <- df_all  %>% 
@@ -328,8 +329,8 @@ p <- df %>%
   stat_interval(.width = c(0.5, 0.75, 0.95)) +
   #scale_y_discrete(labels = toupper) +
   scale_x_continuous(breaks = seq(-100, 100, 100)) +
-  #xlim(-100, 250) + # exceed
-  xlim(-100, 120) +
+  xlim(-100, 250) + # exceed
+  #xlim(-100, 120) +
   geom_point(data = df, aes(x = st_pop_pc_lower, y = as.factor(english)))+
   geom_point(data = df, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
@@ -450,127 +451,66 @@ ggsave(file.path("03_summary", paste0(classtype, "_listed_sp.jpg")),
        dpi = 300)
 
 
-
-######################################
-
-## long term trends 
-
-########################
-
-df_all_lt <- all_dist  %>% 
-  left_join(pifs) %>% 
-  select(-unid_combined, -spcode) %>% 
-  group_by(aou) |> 
-  mutate(median = median(lt_ch_pc)) %>% 
-  ungroup() |> 
-  mutate(english_order = fct_reorder(english, desc(median)))
-#arrange(desc(median))#%>% 
-#select(-median)
-
-
-plottype = "red"
-
-df <- df_all_lt %>% 
-  filter(pif_rank == plottype)
-
-
-p <- df %>%
-  ggplot(aes(x =  lt_ch_pc, y = english_order)) +
-  stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
-  #stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
-  stat_interval() +
-  #scale_y_discrete(labels = toupper) +
-  scale_x_continuous(breaks = seq(-100, 100,100)) +
-  xlim(-100, 250) +
-  geom_point(data = df, aes(x = lt_pop_pc_lower, y = as.factor(english)))+
-  geom_point(data = df, aes(x = lt_pop_pc_uppper, y = as.factor(english)))+
-  scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-  #stat_summary(geom = "point", fun = median) +
-  geom_vline(xintercept = 0, col = "grey30", lty = "dashed") +
-  guides(col = "none") +
-  labs(
-    x = "percent change (%)",
-    y = NULL
-  ) +
-  theme_minimal(base_family = font_family)  +
-  theme(
-    plot.background = element_rect(color = NA, fill = bg_color),
-    panel.grid = element_blank(),
-    panel.grid.major.x = element_line(linewidth = 0.1, color = "grey75"),
-    plot.title = element_text(family = "Fira Sans SemiBold"),
-    plot.title.position = "plot",
-    plot.subtitle = element_textbox_simple(
-      margin = margin(t = 4, b = 16), size = 10),
-    plot.caption = element_textbox_simple(
-      margin = margin(t = 12), size = 7
-    ),
-    plot.caption.position = "plot",
-    axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
-    plot.margin = margin(4, 4, 4, 4)
-  )
-
-
 # 
-# if(plottype == "red"){
-#   
-#   # create the dataframe for the legend (inside plot)
-#   df_for_legend <- df %>% 
-#     filter(english == "Lesser Prairie-Chicken")
-#   
-#   p_legend <- df_for_legend %>% 
-#     ggplot(aes(x = st_ch_pc, y = as.factor(english))) +
-#     stat_halfeye(fill_type = "segments", alpha = 0.3) +
-#     stat_interval() +
-#     #scale_y_discrete(labels = toupper) +
-#     #scale_x_continuous(breaks = seq(-100, 100,100)) +
-#     xlim(-90, 100)+
-#     geom_point(data = df_for_legend, aes(x = st_pop_pc_lower, y = as.factor(english)))+
-#     geom_point(data = df_for_legend, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
-#     scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-#     annotate(
-#       "richtext",
-#       y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.85),
-#       x= c(-60, 65, 10, 5, 55, 45),
-#       label = c("50 % of predictions<br>fall within this range", "95 % of projections", 
-#                 "80 % of projections", "lower target", "upper target","Distribution<br>of projections"),
-#       fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
-#     ) +
-#     geom_curve(
-#       data = data.frame(
-#         y =     c(0.9, 0.9, 0.9,   1.1, 1.82),
-#         yend = c(0.98, 0.98, 0.98,  1.02, 1.82), 
-#         x =    c(-21, 50, 12,  40, 25),
-#         xend = c(-17, 51, 14,  35, 10)),
-#       aes(x = x, xend = xend, y = y, yend = yend),
-#       stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-#       arrow = arrow(angle = 20, length = unit(1, "mm"))
-#     ) +
-#     geom_curve(
-#       data = data.frame(
-#         y =      1.1, 
-#         yend =  1.02,
-#         x =     20,
-#         xend =  25), 
-#       aes(x = x, xend = xend, y = y, yend = yend),
-#       stat = "unique", curvature = -0.2, size = 0.2, color = "grey12",
-#       arrow = arrow(angle = 40, length = unit(1, "mm"))
-#     ) +
-#     scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-#     # coord_flip(xlim = c(0.75, 1.3), ylim = c(0, 6000), expand = TRUE) +
-#     guides(color = "none") +
-#     labs(title = "Legend") +
-#     theme_void(base_family = font_family) +
-#     theme(plot.title = element_text(family = "Fira Sans SemiBold", size = 9,
-#                                     hjust = 0.075),
-#           plot.background = element_rect(color = "grey30", size = 0.2, fill = bg_color))
-#   
-#   
-#   
-#   # Insert the custom legend into the plot
-#   p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.75, clip = FALSE)
-#   
-#   
-# }
+# ######################################
+# 
+# ## long term trends 
+# 
+# ########################
+# 
+# df_all_lt <- all_dist  %>% 
+#   left_join(pifs) %>% 
+#   select(-unid_combined, -spcode) %>% 
+#   group_by(aou) |> 
+#   mutate(median = median(lt_ch_pc)) %>% 
+#   ungroup() |> 
+#   mutate(english_order = fct_reorder(english, desc(median)))
+# #arrange(desc(median))#%>% 
+# #select(-median)
+# 
+# 
+# plottype = "red"
+# 
+# df <- df_all_lt %>% 
+#   filter(pif_rank == plottype)
+# 
+# 
+# p <- df %>%
+#   ggplot(aes(x =  lt_ch_pc, y = english_order)) +
+#   stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
+#   #stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
+#   stat_interval() +
+#   #scale_y_discrete(labels = toupper) +
+#   scale_x_continuous(breaks = seq(-100, 100,100)) +
+#   xlim(-100, 250) +
+#   geom_point(data = df, aes(x = lt_pop_pc_lower, y = as.factor(english)))+
+#   geom_point(data = df, aes(x = lt_pop_pc_uppper, y = as.factor(english)))+
+#   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+#   #stat_summary(geom = "point", fun = median) +
+#   geom_vline(xintercept = 0, col = "grey30", lty = "dashed") +
+#   guides(col = "none") +
+#   labs(
+#     x = "percent change (%)",
+#     y = NULL
+#   ) +
+#   theme_minimal(base_family = font_family)  +
+#   theme(
+#     plot.background = element_rect(color = NA, fill = bg_color),
+#     panel.grid = element_blank(),
+#     panel.grid.major.x = element_line(linewidth = 0.1, color = "grey75"),
+#     plot.title = element_text(family = "Fira Sans SemiBold"),
+#     plot.title.position = "plot",
+#     plot.subtitle = element_textbox_simple(
+#       margin = margin(t = 4, b = 16), size = 10),
+#     plot.caption = element_textbox_simple(
+#       margin = margin(t = 12), size = 7
+#     ),
+#     plot.caption.position = "plot",
+#     axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
+#     plot.margin = margin(4, 4, 4, 4)
+#   )
+
+
 
 p
 
@@ -619,17 +559,43 @@ for(i in files){
 
 
 
+# distribution plot for paper to demonstrate the catergories
+
+p1 <- ggplot(data = data.frame(x = c(-100, 100)), aes(x)) +
+  stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 30)) + ylab("") +
+  scale_y_continuous(breaks = NULL) +
+  scale_x_continuous(breaks = NULL) +  
+  #geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  theme_()
 
 
-
-
-
-
-
-
-
+miss <- p1 +
+  geom_vline(xintercept = 75, linetype = "longdash", linewidth = 2, color = "blue")+
+  ggtitle("Missed")
   
+exceed <- p1 +
+  geom_vline(xintercept = -75, linetype = "longdash", linewidth = 2, color = "blue")+
+  ggtitle("Exceed")
+
+falling_short <- p1 +
+  geom_vline(xintercept = 25, linetype = "longdash", linewidth = 2, color = "blue")+
+  ggtitle("Falling short")
+
+ontrack <- p1 +
+  geom_vline(xintercept = -25, linetype = "longdash", linewidth = 2, color = "blue")+
+  ggtitle("On track")
   
+ #  
+ # ggplot(data = data.frame(x = c(-100, 100)), aes(x)) +
+ #  stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 50)) + ylab("") +
+ #  scale_y_continuous(breaks = NULL) +
+ #  scale_x_continuous(breaks = NULL) +  
+ #  #geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+ #  theme_bw()
+
+
+
+
   
     
 #  https://r-graph-gallery.com/web-ridgeline-plot-with-inside-plot-and-annotations.html

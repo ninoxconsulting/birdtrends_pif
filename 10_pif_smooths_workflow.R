@@ -122,7 +122,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  #i = aous[2]
+  #i = aous[1]
 
   aou_id <- i
   
@@ -212,7 +212,7 @@ for(i in aous){
     #   ldf_smooths, start_yr = 2014, end_yr = 2022, method = "gmean")
     # 
       
-      trend_sm <- get_trend(fitted_smooths, start_yr = 2014, end_yr = 2022, method = "gmean", annual_variation = FALSE)
+      trend_sm <- get_trend(fitted_smooths, start_yr = 2014, end_yr = 2022, method = "gmean", annual_variation = TRUE)
       
       ######################################################################
       # 4. predict trend 

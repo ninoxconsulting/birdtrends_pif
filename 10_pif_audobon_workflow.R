@@ -41,7 +41,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
- # i = aous[1]
+  #i = aous[1]
   
   aou_id <- i
   
@@ -146,7 +146,7 @@ for(i in aous){
   
 
 #trend_sm <- get_trend(fitted_data , start_yr = 2014, end_yr = 2022, method = "gmean")
-trend_sm <- get_trend(fitted_data , start_yr = 2014, end_yr = 2021, method = "gmean", annual_variation = FALSE)
+trend_sm <- get_trend(fitted_data , start_yr = 2014, end_yr = 2021, method = "gmean", annual_variation = TRUE)
 
     
 #    draw trend_log perc_trend
