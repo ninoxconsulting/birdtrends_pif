@@ -5,7 +5,7 @@ library(readr)
 library(janitor)
 library(bbsBayes2)
 
-devtools::install_github("ninoxconsulting/birdtrends", ref= "annual_trend_projections" )
+#devtools::install_github("ninoxconsulting/birdtrends", ref= "annual_trend_projections" )
 library(birdtrends)
 extrafont::loadfonts(device="win")
 library(ggplot2)
@@ -37,6 +37,9 @@ raou <- pifs$aou
 
 # shortlist the aous to species have modeled outputs 
 mraou <- raou[raou %in% outbirds]
+#drip the spotted owl 3690
+mraou <- mraou[-55]
+
 
 mraoul <- as.list(mraou)
 
@@ -152,10 +155,10 @@ st_sum <- left_join(short_dist_df, dist_df_percentiles)%>%
 st_sum <- st_sum %>%
  dplyr::mutate(st_class_type1 = case_when(
     `5%` <= -30 & `95%` >=43 ~ "uncertain",
-    `75%` < st_pop_pc_lower ~ "miss",
-    `25%` > st_pop_pc_lower ~ "exceed", 
-    `25%` < st_pop_pc_lower & `50%`> st_pop_pc_lower ~ "ontrack",
-    `50%` < st_pop_pc_lower & `75%`> st_pop_pc_lower ~ "falling short",
+    `75%` < st_pop_pc_lower ~ "miss objective - high consistency",
+    `25%` > st_pop_pc_lower ~ "meet objective - high consistency", 
+    `25%` < st_pop_pc_lower & `50%`> st_pop_pc_lower ~ "meet objective - low consistency", 
+    `50%` < st_pop_pc_lower & `75%`> st_pop_pc_lower ~ "miss objective - low consistency",
     TRUE ~ "tbd"
   ))
   
@@ -190,10 +193,10 @@ lt_sum <- left_join(long_dist_df, dist_df_percentiles_lt)%>%
 lt_sum <- lt_sum %>%
   mutate(lt_class_type1 = case_when(
     `5%` <= -30 & `95%` >=43 ~ "uncertain",
-    `75%` < lt_pop_pc_lower ~ "miss",
-    `25%` > lt_pop_pc_lower ~ "exceed", 
-    `25%` < lt_pop_pc_lower & `50%`> lt_pop_pc_lower ~ "ontrack",
-    `50%` < lt_pop_pc_lower & `75%`> lt_pop_pc_lower ~ "falling short",
+    `75%` < lt_pop_pc_lower ~ "miss objective - high consistency",
+    `25%` > lt_pop_pc_lower ~ "meet objective - high consistency", 
+    `25%` < lt_pop_pc_lower & `50%`> lt_pop_pc_lower ~ "meet objective - low consistency",
+    `50%` < lt_pop_pc_lower & `75%`> lt_pop_pc_lower ~ "miss objective - low consistency",
     TRUE ~ "tbd"
   ))
   
@@ -241,13 +244,14 @@ cat_long <- bind_rows(st, lt) |>
   select(-st_class_type1, -lt_class_type1) |> 
 complete(type, class  , fill = list(n = 0))
 
+write.csv(cat_long, file.path("03_summary", "overall_percentage_no_summary.csv"), row.names = FALSE)
 
 # generate overview summary plots 
 
 ggplot(cat_long, aes(y = pc, class, fill = factor(type, levels = c("short-term", "long-term"))))+
   geom_bar(stat = "identity", position = position_dodge(preserve="single"), width = 0.9,)+
   #geom_col(position = position_stack(reverse = TRUE))
-  scale_x_discrete(limits = c("miss", "falling short", "ontrack","exceed", "uncertain" )) +
+  scale_x_discrete(limits = c("meet objective - high consistency","meet objective - low consistency", "miss objective - low consistency", "miss objective - high consistency", "uncertain" )) +
   geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.55)+
   scale_fill_grey()+
   labs(y = "percent of species")+
@@ -274,17 +278,21 @@ ggsave(file.path("03_summary", "st_allsp_percent_catergory.jpg"),
 
 df_all <- left_join(df_all, cat)
 
-
-
 # get list of species for each catergory 
-
 
 sp_class <- df_all |> 
   select(aou, english, st_class_type1, lt_class_type1) |> 
   unique()%>% 
   arrange(st_class_type1, lt_class_type1, aou)
 
-write.csv(sp_class, file.path("03_summary", "species_class.csv"))
+pifs <- read.csv("sp_key_bbs_full.csv")|> 
+  select(c("seq","aou","english","genus", "species")) |> 
+  distinct()
+
+sp_full <- left_join(sp_class, pifs, )
+
+
+write.csv(sp_full, file.path("03_summary", "species_class_fulltable.csv"))
 
 
 
@@ -295,29 +303,30 @@ write.csv(sp_class, file.path("03_summary", "species_class.csv"))
 
 ######################################################################
 
-
-
-
-#write.csv(st_sum, "test.csv")
-
-# update this line for each seperate plot 
-
-#plottype = "red"  # "red", "d"
-classtype = "exceed"   #"miss"  #"exceed"     "falling short"     "ontrack"       "uncertain"    
-
+#classtype = "meet target - high confidence"   #"miss target - high confidence"  #"exceed"     "falling short"     "ontrack"       "uncertain"    
+classtype = "miss objective - low consistency"  
+classtype = "meet objective - low consistency"  
+classtype = "miss objective - high consistency" 
+classtype = "meet objective - high consistency"
 
 df_for_legend <- df_all  %>% 
-  filter(english == "Lesser Prairie-Chicken")
-
+  filter(english == "Golden-winged Warbler")
+df_for_legend <- df_for_legend[1:1000,]
 
 df <- df_all %>%
   #filter(pif_rank == plottype)
   left_join(st_sum) |> 
-  filter(st_class_type1 == classtype)
+  filter(st_class_type1 == classtype) 
 
 
 bg_color <- "grey97"
 font_family <- "Fira Sans"
+
+
+# get subset to test graphics
+
+#df <- df |> 
+#  filter(english %in% c("Black-chinned Sparrow", "Prothonotary Warbler"))
 
 
 ### PLots continued 
@@ -325,12 +334,12 @@ font_family <- "Fira Sans"
 p <- df %>%
   ggplot(aes(x =  st_ch_pc, y = english_order)) +
   stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
-  #stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
+  ##stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
   stat_interval(.width = c(0.5, 0.75, 0.95)) +
-  #scale_y_discrete(labels = toupper) +
   scale_x_continuous(breaks = seq(-100, 100, 100)) +
-  xlim(-100, 250) + # exceed
+  #xlim(-100, 250) + # meet target - high confidence
   #xlim(-100, 120) +
+  xlim(-100, 75) + # miss target - high consistency
   geom_point(data = df, aes(x = st_pop_pc_lower, y = as.factor(english)))+
   geom_point(data = df, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
@@ -360,7 +369,7 @@ p <- df %>%
     )
 
 
-if(classtype == "exceed"){
+if(classtype == "meet objective - high consistency"){
 #if(plottype == "red"){
 
 # create the dataframe for the legend (inside plot)
@@ -373,29 +382,39 @@ p_legend <- df_for_legend %>%
   stat_interval( .width = c(0.5, 0.75, 0.95)) +
   #scale_y_discrete(labels = toupper) +
   #scale_x_continuous(breaks = seq(-100, 100,100)) +
-  xlim(-90, 100)+
+  xlim(-60, 150)+
   geom_point(data = df_for_legend, aes(x = st_pop_pc_lower, y = as.factor(english)))+
   geom_point(data = df_for_legend, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
   annotate(
     "richtext",
-    y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.85),
-    x= c(-60, 65, 20, 5, 55, 45),
-    label = c("50 % of projections <br>fall within this range", "95 % of <br>projections", 
-              "75 % of <br> projections", "lower target", "upper target","Distribution<br>of projections"),
+    y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.9),
+    #x= c(-60, 65, 20, 5, 55, 45),
+    x= c(-10, 105, 65, 5, 55, 110),
+    label = c("50 % of projections <br>fall within this range", 
+              "95 % of <br>projections", 
+              "75 % of <br> projections", 
+              "lower target", 
+              "upper target",
+              "Distribution<br>of projections"),
     fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
   ) +
   geom_curve(
+   # data = data.frame(
+  #    y =     c(0.9, 0.9, 0.9,   1.1, 1.82),
+  #    yend = c(0.98, 0.98, 0.98,  1.02, 1.82), 
+  #    x =    c(-21, 50, 12,  40, 25),
+  #    xend = c(-17, 51, 14,  35, 10)),
     data = data.frame(
-      y =     c(0.9, 0.9, 0.9,   1.1, 1.82),
-      yend = c(0.98, 0.98, 0.98,  1.02, 1.82), 
-      x =    c(-21, 50, 12,  40, 25),
-      xend = c(-17, 51, 14,  35, 10)),
+      y =    c( 0.9, 0.9),
+      yend = c( 0.98, 0.98), 
+      x =    c( 60, 40),
+      xend = c(61, 41)),
     aes(x = x, xend = xend, y = y, yend = yend),
     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
     arrow = arrow(angle = 20, length = unit(1, "mm"))
-  ) +
-  geom_curve(
+  ) + #lower target
+  geom_curve(  
     data = data.frame(
       y =      1.1, 
       yend =  1.02,
@@ -404,7 +423,37 @@ p_legend <- df_for_legend %>%
     aes(x = x, xend = xend, y = y, yend = yend),
     stat = "unique", curvature = -0.2, size = 0.2, color = "grey12",
     arrow = arrow(angle = 40, length = unit(1, "mm"))
-  ) +
+  ) + #upper target
+  geom_curve(  
+    data = data.frame(
+      y =      1.1, 
+      yend =  1.02,
+      x =     40,
+      xend =  35), 
+    aes(x = x, xend = xend, y = y, yend = yend),
+    stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+    arrow = arrow(angle = 40, length = unit(1, "mm"))
+  ) + # distrbution of projections>
+  geom_curve(  
+    data = data.frame(
+      y =     1.82, 
+      yend =  1.82,
+      x =    75,
+      xend =  60), #60
+    aes(x = x, xend = xend, y = y, yend = yend),
+    stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+    arrow = arrow(angle = 40, length = unit(1, "mm"))
+  ) + # 95% projections>
+  geom_curve(  
+    data = data.frame(
+      y =     0.9, 
+      yend =  0.98,
+      x =   90,
+      xend = 85), #60
+    aes(x = x, xend = xend, y = y, yend = yend),
+    stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+    arrow = arrow(angle = 40, length = unit(1, "mm"))
+  )+
   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
  # coord_flip(xlim = c(0.75, 1.3), ylim = c(0, 6000), expand = TRUE) +
   guides(color = "none") +
@@ -415,36 +464,38 @@ p_legend <- df_for_legend %>%
         plot.background = element_rect(color = "grey30", size = 0.2, fill = bg_color))
 
 
+#p_legend
+
 
 # Insert the custom legend into the plot
-p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.75, clip = FALSE)
+p <- p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.80, clip = FALSE)
 
 }
 
-p
+#p
 
 
-if (classtype == "exceed") { 
+if (classtype == "meet objective - high consistency") { 
   pwidth = 30  
   pheight = 35
 }
 
-if (classtype == "falling short") { 
+if (classtype == "miss objective - low consistency") { 
   pwidth = 30  
   pheight = 25
 }
 
-if (classtype == "ontrack") { 
+if (classtype == "meet objective - low consistency") { 
   pwidth = 30  
   pheight = 15
 }
 
-if (classtype == "miss") { 
+if (classtype == "miss objective - high consistency") { 
   pwidth = 30  
   pheight = 35
 }
 
-ggsave(file.path("03_summary", paste0(classtype, "_listed_sp.jpg")), 
+ggsave(plot = p, file.path("03_summary", paste0(classtype, "_listed_sp.jpg")), 
        width = pwidth,
        height = pheight,
        units = c("cm"),
@@ -571,19 +622,19 @@ p1 <- ggplot(data = data.frame(x = c(-100, 100)), aes(x)) +
 
 miss <- p1 +
   geom_vline(xintercept = 75, linetype = "longdash", linewidth = 2, color = "blue")+
-  ggtitle("Missed")
+  ggtitle("Miss target - high confidence")
   
 exceed <- p1 +
   geom_vline(xintercept = -75, linetype = "longdash", linewidth = 2, color = "blue")+
-  ggtitle("Exceed")
+  ggtitle("Meet target - high confidence")
 
 falling_short <- p1 +
   geom_vline(xintercept = 25, linetype = "longdash", linewidth = 2, color = "blue")+
-  ggtitle("Falling short")
+  ggtitle("Miss target - low confidence")
 
 ontrack <- p1 +
   geom_vline(xintercept = -25, linetype = "longdash", linewidth = 2, color = "blue")+
-  ggtitle("On track")
+  ggtitle("Meet target - low confidence")
   
  #  
  # ggplot(data = data.frame(x = c(-100, 100)), aes(x)) +

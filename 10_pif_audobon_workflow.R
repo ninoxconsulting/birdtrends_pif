@@ -3,6 +3,7 @@
 # for other species. Hence different method used. 
 
 devtools::install_github("ninoxconsulting/birdtrends", ref= "annual_trend_projections" )
+devtools::install_github("bbsBayes/bbsBayes2")
 library(bbsBayes2)
 library(birdtrends)
 library(ggplot2)
@@ -41,7 +42,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  #i = aous[1]
+  i = aous[1]
   
   aou_id <- i
   
