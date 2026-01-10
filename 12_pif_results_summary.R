@@ -248,30 +248,68 @@ write.csv(cat_long, file.path("03_summary", "overall_percentage_no_summary.csv")
 
 # generate overview summary plots 
 
-ggplot(cat_long, aes(y = pc, class, fill = factor(type, levels = c("short-term", "long-term"))))+
+cat_long <- cat_long %>%
+  mutate(class_name = case_when(
+    class == "meet objective - high consistency" ~ "me_h",
+    class == "meet objective - low consistency" ~ "me_l",
+    class == "miss objective - low consistency" ~ "mi_l",
+    class == "miss objective - high consistency" ~ "mi_h",
+    class == "uncertain" ~ "un"
+  ))
+           
+
+p1 <- ggplot(cat_long, aes(y = pc, class, fill = factor(type, levels = c("short-term", "long-term"))))+
   geom_bar(stat = "identity", position = position_dodge(preserve="single"), width = 0.9,)+
   #geom_col(position = position_stack(reverse = TRUE))
-  scale_x_discrete(limits = c("meet objective - high consistency","meet objective - low consistency", "miss objective - low consistency", "miss objective - high consistency", "uncertain" )) +
+  #scale_x_discrete(limits = c("meet objective - high consistency","meet objective - low consistency", "miss objective - low consistency", "miss objective - high consistency", "uncertain" ), labels = label_wrap_gen(10)) +
+  #scale_x_discrete(labels = c("meet objective - high consistency" = "meet objective - high",
+  #                            "meet objective - low consistency" = "meet objective - low", 
+  #                            "miss objective - low consistency" = "miss objective - low",
+  #                            "miss objective - high consistency" = "miss objective - high",
+  #                            "uncertain" = "un"), default = label_wrap_gen(width = 25, multi_line = TRUE))) +
+  scale_x_discrete(labels = c("meet objective - high consistency" = "me_h",
+                              "meet objective - low consistency" = "me_l",
+                              "miss objective - low consistency" = "mi_l",
+                              "miss objective - high consistency" = "mi_h",
+                              "uncertain" = "un"),
+                   limits = c("meet objective - high consistency","meet objective - low consistency", "miss objective - low consistency", "miss objective - high consistency", "uncertain" )) +
+                   
+  #scale_x_discrete(limits = c("me_h","me_l", "mi_l", "mi_h", "un" )) +
   geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.55)+
   scale_fill_grey()+
   labs(y = "percent of species")+
+  ylim(0,57)+
   theme_bw()+
   theme(
     axis.title.x = element_blank(),
-    legend.title = element_blank()
+    legend.title = element_blank(),
+    legend.position = c( 0.12,0.90),
+    legend.box.margin = margin(t = 1, l = 1),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    #axis.text.x = element_text(angle = 90, hjust = 1)) #,
+    #legend.box.background = element_rect(color = "black")#"top"
     #axis.text.x = element_blank(),
     #axis.ticks.x = element_blank()
   )
 
-ggsave(file.path("03_summary", "st_allsp_percent_catergory.jpg"),
-       width = 30,
-       height = 20,
+p1
+ggsave(plot =p1, 
+       file.path("03_summary", "st_allsp_percent_catergory_paper.jpg"),
+       width = 15,
+       height = 12,
        units = c("cm"),
        dpi = 300)
 
+paper_filepath <- "C:/Users/genev/OneDrive/Documents/02.Contracts/2024_ECCC_birdtrends/06.Journal_paper/Paper_tables_figures"
 
-
-
+ggsave(plot = p1, 
+       file.path(paper_filepath, "Figure1.jpg"),
+       width = 15,
+       height = 12,
+       units = c("cm"),
+       dpi = 300)
 
 
 ## Get the full list of species and category 
