@@ -122,7 +122,7 @@ aous <- sort(pifs$aou)
 
 for(i in aous){
   
-  #i = aous[1]
+ # i = aous[1]
 
   aou_id <- i
   
@@ -269,19 +269,13 @@ for(i in aous){
                                       targets = index_baseline,
                                       set_upperlimit = TRUE,
                                       upperlimit = 1.5,
-                                      annual_variation = FALSE)
+                                      annual_variation = TRUE)
       
       
-      sm_plot_target <- sm_plot_target + ggplot2::labs(title = fit$meta_data$species)
-      saveRDS(sm_plot_target, file.path(dir, paste0("trend_",aou_id,"_plot.rds")))
+      #sm_plot_target <- sm_plot_target + ggplot2::labs(title = fit$meta_data$species)
+      #saveRDS(sm_plot_target, file.path(dir, paste0("trend_",aou_id,"_plot.rds")))
       
-             # 
-             # plot = sm_plot_target, 
-             # width = 25,
-             # height = 18,
-             # units = "cm")
-             # 
-             # 
+        
       
       ########################################################
       
@@ -336,8 +330,8 @@ for(i in aous){
       #probs
       
       
-      outdata <- list(fitted_smooths, trend_sm, preds_sm,  targ, index_baseline, trends, prob_st, prob_lt  )
-      names(outdata)<- c("fitted_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "trends", "prob_st", "prob_lt")
+      outdata <- list(fitted_smooths, trend_sm, preds_sm,  targ, index_baseline, trends, prob_st, prob_lt, input1 )
+      names(outdata)<- c("fitted_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "trends", "prob_st", "prob_lt", "input1")
       
       
       saveRDS(outdata, file.path(dir, paste0(aou_id,"_outputs.rds")))

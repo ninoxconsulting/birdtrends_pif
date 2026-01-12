@@ -3,7 +3,7 @@
 # for other species. Hence different method used. 
 
 devtools::install_github("ninoxconsulting/birdtrends", ref= "annual_trend_projections" )
-devtools::install_github("bbsBayes/bbsBayes2")
+#devtools::install_github("bbsBayes/bbsBayes2")
 library(bbsBayes2)
 library(birdtrends)
 library(ggplot2)
@@ -260,7 +260,7 @@ sm_plot_target <- plot_trend(raw_indices = NULL,
 sm_plot_target <- sm_plot_target + ggplot2::labs(title = english_name)
 saveRDS(sm_plot_target, file.path(dir, paste0("trend_",aou_id,"_plot.rds")))
 
-# 
+
 # plot = sm_plot_target, 
 # width = 25,
 # height = 18,
@@ -323,8 +323,8 @@ trends <- trends[,-4]
 #probs
 
 
-outdata <- list(fitted_data, trend_sm, preds_sm,  targ, index_baseline, trends, prob_st, prob_lt  )
-names(outdata)<- c("fitted_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "trends", "prob_st", "prob_lt")
+outdata <- list(fitted_data, trend_sm, preds_sm,  targ, index_baseline, trends, prob_st, prob_lt, input1 = NULL )
+names(outdata)<- c("fitted_smooths", "trend_sm", "pred_sm", "targ", "index_baseline", "trends", "prob_st", "prob_lt", "input1")
 
 
 saveRDS(outdata, file.path(dir, paste0(aou_id,"_outputs.rds")))
