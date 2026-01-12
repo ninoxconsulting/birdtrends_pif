@@ -138,6 +138,7 @@ st_sum <- st_sum %>%
   ))
 
 #write.csv(st_sum, file.path("st_sum_test.csv"), row.names = FALSE)
+saveRDS(st_sum, file.path("03_summary", "st_sum_data_for_papers.rds"))
 
 st_cat <- st_sum %>% 
   dplyr::select(aou, st_class_type1)
@@ -316,7 +317,18 @@ write.csv(sp_full, file.path("03_summary", "species_class_fulltable.csv"))
 
 ######################################################################
 
-#classtype = "meet target - high confidence"   #"miss target - high confidence"  #"exceed"     "falling short"     "ontrack"       "uncertain"    
+paper_filepath <- "C:/Users/genev/OneDrive/Documents/02.Contracts/2024_ECCC_birdtrends/06.Journal_paper/Paper_tables_figures"
+#saveRDS(st_sum, file.path("03_summary", "st_sum_data_for_papers.rds"))
+#saveRDS(df_all, file = "03_summary/df_all_data_for_plots.rds")
+df_all <- readRDS("03_summary/df_all_data_for_plots.rds")
+st_sum <- readRDS("03_summary/st_sum_data_for_papers.rds")
+
+# read in background information
+bg_color <- "grey97"
+font_family <- "Fira Sans"
+
+
+
 
 #1) "miss objective - low consistency"  
 
@@ -333,8 +345,144 @@ df <- df_all %>%
   left_join(st_sum) |> 
   filter(st_class_type1 == classtype) 
 
-bg_color <- "grey97"
-font_family <- "Fira Sans"
+
+
+### PLots continued 
+
+p <- df %>%
+  ggplot(aes(x =  st_ch_pc, y = english_order)) +
+  stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
+  ##stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
+  stat_interval(.width = c(0.5, 0.75, 0.95)) +
+  scale_x_continuous(breaks = seq(-100, 100, 100)) +
+  #xlim(-100, 250) + # meet target - high confidence
+  #xlim(-100, 120) +
+  xlim(-80, 75) + # miss target - high consistency
+  geom_point(data = df, aes(x = st_pop_pc_lower, y = as.factor(english)))+
+  geom_point(data = df, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
+  scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+  #stat_summary(geom = "point", fun = median) +
+  geom_vline(xintercept = 0, col = "grey30", lty = "dashed") +
+  guides(col = "none") +
+  labs(
+    x = "percent change (%)",
+    y = NULL
+  ) +
+  theme_minimal(base_family = font_family)  +
+  theme(
+    plot.background = element_rect(color = NA, fill = bg_color),
+    panel.grid = element_blank(),
+    panel.grid.major.x = element_line(linewidth = 0.1, color = "grey75"),
+    plot.title = element_text(family = "Fira Sans SemiBold"),
+    plot.title.position = "plot",
+    plot.subtitle = element_textbox_simple(
+      margin = margin(t = 4, b = 16), size = 10),
+    plot.caption = element_textbox_simple(
+      margin = margin(t = 12), size = 7
+    ),
+    plot.caption.position = "plot",
+    axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
+    plot.margin = margin(4, 4, 4, 4),
+    axis.text=element_text(size=12)
+  )
+
+# 
+# ggsave(plot = p, file.path("03_summary", paste0(classtype, "_listed_sp.jpg")), 
+#        width = pwidth,
+#        height = pheight,
+#        units = c("cm"),
+#        dpi = 300)
+
+#height = 9 *1.5
+
+ggsave(plot = p, 
+       file.path(paper_filepath, "Figure7.jpg"),
+       width = 16,
+       height = 14,
+       units = c("cm"),
+       dpi = 300)
+
+
+############################################################
+
+#2) "meet objective - low consistency" 
+
+classtype = "meet objective - low consistency"   # Figure 3  # 6 
+# classtype = "miss objective - high consistency"  #figure 6
+# classtype = "meet objective - high consistency" # Figure 2
+
+# df_for_legend <- df_all  %>% 
+#   filter(english == "Golden-winged Warbler")
+# df_for_legend <- df_for_legend[1:1000,]
+
+df <- df_all %>%
+  #filter(pif_rank == plottype)
+  left_join(st_sum) |> 
+  filter(st_class_type1 == classtype) 
+
+### PLots continued 
+
+p <- df %>%
+  ggplot(aes(x =  st_ch_pc, y = english_order)) +
+  stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
+  ##stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
+  stat_interval(.width = c(0.5, 0.75, 0.95)) +
+  scale_x_continuous(breaks = seq(-100, 100, 100)) +
+  #xlim(-100, 250) + # meet target - high confidence
+  #xlim(-100, 120) +
+  xlim(-60, 120) + # miss target - high consistency
+  geom_point(data = df, aes(x = st_pop_pc_lower, y = as.factor(english)))+
+  geom_point(data = df, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
+  scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+  #stat_summary(geom = "point", fun = median) +
+  geom_vline(xintercept = 0, col = "grey30", lty = "dashed") +
+  guides(col = "none") +
+  labs(
+    x = "percent change (%)",
+    y = NULL
+  ) +
+  theme_minimal(base_family = font_family)  +
+  theme(
+    plot.background = element_rect(color = NA, fill = bg_color),
+    panel.grid = element_blank(),
+    panel.grid.major.x = element_line(linewidth = 0.1, color = "grey75"),
+    plot.title = element_text(family = "Fira Sans SemiBold"),
+    plot.title.position = "plot",
+    plot.subtitle = element_textbox_simple(
+      margin = margin(t = 4, b = 16), size = 10),
+    plot.caption = element_textbox_simple(
+      margin = margin(t = 12), size = 7
+    ),
+    plot.caption.position = "plot",
+    axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
+    plot.margin = margin(4, 4, 4, 4),
+    axis.text=element_text(size=12)
+  )
+
+#p
+#height + 1.5*6
+
+ggsave(plot = p, 
+       file.path(paper_filepath, "Figure3.jpg"),
+       width = 16,
+       height = 9,
+       units = c("cm"),
+       dpi = 300)
+
+
+
+
+############################################################
+
+#3) "meet objective - low consistency" 
+
+classtype = "miss objective - high consistency"  #figure 6
+# classtype = "meet objective - high consistency" # Figure 2
+
+df <- df_all %>%
+  #filter(pif_rank == plottype)
+  left_join(st_sum) |> 
+  filter(st_class_type1 == classtype) 
 
 ### PLots continued 
 
@@ -375,156 +523,9 @@ p <- df %>%
     axis.text=element_text(size=12)
   )
 
-
-ggsave(plot = p, file.path("03_summary", paste0(classtype, "_listed_sp.jpg")), 
-       width = pwidth,
-       height = pheight,
-       units = c("cm"),
-       dpi = 300)
-
-
-ggsave(plot = p, 
-       file.path(paper_filepath, "Figure7.jpg"),
-       width = 16,
-       height = 14,
-       units = c("cm"),
-       dpi = 300)
-
-
-############################################################
-
-#
-#2) "meet objective - low consistency" 
-
-classtype = "meet objective - low consistency"   # Figure 3  # 6 
-# classtype = "miss objective - high consistency"  #figure 6
-# classtype = "meet objective - high consistency" # Figure 2
-
-df_for_legend <- df_all  %>% 
-  filter(english == "Golden-winged Warbler")
-df_for_legend <- df_for_legend[1:1000,]
-
-df <- df_all %>%
-  #filter(pif_rank == plottype)
-  left_join(st_sum) |> 
-  filter(st_class_type1 == classtype) 
-
-bg_color <- "grey97"
-font_family <- "Fira Sans"
-
-
-### PLots continued 
-
-p <- df %>%
-  ggplot(aes(x =  st_ch_pc, y = english_order)) +
-  stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
-  ##stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
-  stat_interval(.width = c(0.5, 0.75, 0.95)) +
-  scale_x_continuous(breaks = seq(-100, 100, 100)) +
-  #xlim(-100, 250) + # meet target - high confidence
-  #xlim(-100, 120) +
-  xlim(-80, 120) + # miss target - high consistency
-  geom_point(data = df, aes(x = st_pop_pc_lower, y = as.factor(english)))+
-  geom_point(data = df, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
-  scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-  #stat_summary(geom = "point", fun = median) +
-  geom_vline(xintercept = 0, col = "grey30", lty = "dashed") +
-  guides(col = "none") +
-  labs(
-    x = "percent change (%)",
-    y = NULL
-  ) +
-  theme_minimal(base_family = font_family)  +
-  theme(
-    plot.background = element_rect(color = NA, fill = bg_color),
-    panel.grid = element_blank(),
-    panel.grid.major.x = element_line(linewidth = 0.1, color = "grey75"),
-    plot.title = element_text(family = "Fira Sans SemiBold"),
-    plot.title.position = "plot",
-    plot.subtitle = element_textbox_simple(
-      margin = margin(t = 4, b = 16), size = 10),
-    plot.caption = element_textbox_simple(
-      margin = margin(t = 12), size = 7
-    ),
-    plot.caption.position = "plot",
-    axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
-    plot.margin = margin(4, 4, 4, 4),
-    axis.text=element_text(size=12)
-  )
-
 p
 
-
-ggsave(plot = p, 
-       file.path(paper_filepath, "Figure3.jpg"),
-       width = 16,
-       height = 9,
-       units = c("cm"),
-       dpi = 300)
-
-
-
-
-############################################################
-
-#3) "meet objective - low consistency" 
-
-classtype = "miss objective - high consistency"  #figure 6
-# classtype = "meet objective - high consistency" # Figure 2
-
-df_for_legend <- df_all  %>% 
-  filter(english == "Golden-winged Warbler")
-df_for_legend <- df_for_legend[1:1000,]
-
-df <- df_all %>%
-  #filter(pif_rank == plottype)
-  left_join(st_sum) |> 
-  filter(st_class_type1 == classtype) 
-
-bg_color <- "grey97"
-font_family <- "Fira Sans"
-
-
-### PLots continued 
-
-p <- df %>%
-  ggplot(aes(x =  st_ch_pc, y = english_order)) +
-  stat_halfeye(fill_type = "segments", alpha = 0.3)+ #, slab_fill = "blue") + 
-  ##stat_halfeye(aes(x = lt_ch_pc, y =english_order), slab_fill = "orange", fill_type = "segments", alpha = 0.3) + 
-  stat_interval(.width = c(0.5, 0.75, 0.95)) +
-  scale_x_continuous(breaks = seq(-100, 100, 100)) +
-  #xlim(-100, 250) + # meet target - high confidence
-  #xlim(-100, 120) +
-  xlim(-80, 120) + # miss target - high consistency
-  geom_point(data = df, aes(x = st_pop_pc_lower, y = as.factor(english)))+
-  geom_point(data = df, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
-  scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-  #stat_summary(geom = "point", fun = median) +
-  geom_vline(xintercept = 0, col = "grey30", lty = "dashed") +
-  guides(col = "none") +
-  labs(
-    x = "percent change (%)",
-    y = NULL
-  ) +
-  theme_minimal(base_family = font_family)  +
-  theme(
-    plot.background = element_rect(color = NA, fill = bg_color),
-    panel.grid = element_blank(),
-    panel.grid.major.x = element_line(linewidth = 0.1, color = "grey75"),
-    plot.title = element_text(family = "Fira Sans SemiBold"),
-    plot.title.position = "plot",
-    plot.subtitle = element_textbox_simple(
-      margin = margin(t = 4, b = 16), size = 10),
-    plot.caption = element_textbox_simple(
-      margin = margin(t = 12), size = 7
-    ),
-    plot.caption.position = "plot",
-    axis.text.y = element_text(hjust = 0, margin = margin(r = -10), family = "Fira Sans SemiBold"),
-    plot.margin = margin(4, 4, 4, 4),
-    axis.text=element_text(size=12)
-  )
-
-p
+#height = 19*1.5 # takes a long time to plot 
 
 ggsave(plot = p, 
        file.path(paper_filepath, "Figure6.jpg"),
@@ -539,20 +540,17 @@ ggsave(plot = p,
 
 #4) "meet objective - high consistency" 
 
-
 classtype = "meet objective - high consistency" # Figure 2
 
-df_for_legend <- df_all  %>% 
-  filter(english == "Golden-winged Warbler")
-df_for_legend <- df_for_legend[1:1000,]
+# df_for_legend <- df_all  %>% 
+#   filter(english == "Golden-winged Warbler")
+# df_for_legend <- df_for_legend[1:1000,]
 
 df <- df_all %>%
   #filter(pif_rank == plottype)
   left_join(st_sum) |> 
   filter(st_class_type1 == classtype) 
 
-bg_color <- "grey97"
-font_family <- "Fira Sans"
 
 
 ### PLots continued 
@@ -564,8 +562,10 @@ p <- df %>%
   stat_interval(.width = c(0.5, 0.75, 0.95)) +
   scale_x_continuous(breaks = seq(-100, 100, 100)) +
   #xlim(-100, 250) + # meet target - high confidence
-  #xlim(-100, 120) +
-  xlim(-80, 120) + # miss target - high consistency
+  xlim(-100, 300) + # meet target - high confidence
+  
+   #xlim(-100, 120) +
+  #xlim(-80, 120) + # miss target - high consistency
   geom_point(data = df, aes(x = st_pop_pc_lower, y = as.factor(english)))+
   geom_point(data = df, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
@@ -595,130 +595,114 @@ p <- df %>%
   )
 
 
-if(classtype == "meet objective - high consistency"){
+#if(classtype == "meet objective - high consistency"){
   #if(plottype == "red"){
 
-  p_legend <- df_for_legend %>%
-    ggplot(aes(x = st_ch_pc, y = as.factor(english))) +
-    stat_halfeye(fill_type = "segments", alpha = 0.3) +
-    stat_interval( .width = c(0.5, 0.75, 0.95)) +
-    #scale_y_discrete(labels = toupper) +
-    #scale_x_continuous(breaks = seq(-100, 100,100)) +
-    xlim(-60, 150)+
-    geom_point(data = df_for_legend, aes(x = st_pop_pc_lower, y = as.factor(english)))+
-    geom_point(data = df_for_legend, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
-    scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-    annotate(
-      "richtext",
-      y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.9),
-      #x= c(-60, 65, 20, 5, 55, 45),
-      x= c(-10, 105, 65, 5, 55, 110),
-      label = c("50 % of projections <br>fall within this range",
-                "95 % of <br>projections",
-                "75 % of <br> projections",
-                "lower target",
-                "upper target",
-                "Distribution<br>of projections"),
-      fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
-    ) +
-    geom_curve(
-      # data = data.frame(
-      #    y =     c(0.9, 0.9, 0.9,   1.1, 1.82),
-      #    yend = c(0.98, 0.98, 0.98,  1.02, 1.82),
-      #    x =    c(-21, 50, 12,  40, 25),
-      #    xend = c(-17, 51, 14,  35, 10)),
-      data = data.frame(
-        y =    c( 0.9, 0.9),
-        yend = c( 0.98, 0.98),
-        x =    c( 60, 40),
-        xend = c(61, 41)),
-      aes(x = x, xend = xend, y = y, yend = yend),
-      stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-      arrow = arrow(angle = 20, length = unit(1, "mm"))
-    ) + #lower target
-    geom_curve(
-      data = data.frame(
-        y =      1.1,
-        yend =  1.02,
-        x =     20,
-        xend =  25),
-      aes(x = x, xend = xend, y = y, yend = yend),
-      stat = "unique", curvature = -0.2, size = 0.2, color = "grey12",
-      arrow = arrow(angle = 40, length = unit(1, "mm"))
-    ) + #upper target
-    geom_curve(
-      data = data.frame(
-        y =      1.1,
-        yend =  1.02,
-        x =     40,
-        xend =  35),
-      aes(x = x, xend = xend, y = y, yend = yend),
-      stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-      arrow = arrow(angle = 40, length = unit(1, "mm"))
-    ) + # distrbution of projections>
-    geom_curve(
-      data = data.frame(
-        y =     1.82,
-        yend =  1.82,
-        x =    75,
-        xend =  60), #60
-      aes(x = x, xend = xend, y = y, yend = yend),
-      stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-      arrow = arrow(angle = 40, length = unit(1, "mm"))
-    ) + # 95% projections>
-    geom_curve(
-      data = data.frame(
-        y =     0.9,
-        yend =  0.98,
-        x =   90,
-        xend = 85), #60
-      aes(x = x, xend = xend, y = y, yend = yend),
-      stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-      arrow = arrow(angle = 40, length = unit(1, "mm"))
-    )+
-    scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-    # coord_flip(xlim = c(0.75, 1.3), ylim = c(0, 6000), expand = TRUE) +
-    guides(color = "none") +
-    labs(title = "Legend") +
-    theme_void(base_family = font_family) +
-    theme(plot.title = element_text(family = "Fira Sans SemiBold", size = 9,
-                                    hjust = 0.075),
-          plot.background = element_rect(color = "grey30", size = 0.2, fill = bg_color))
-
-
-  #p_legend
-
-
-  # Insert the custom legend into the plot
-  p <- p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.80, clip = FALSE)
-
-}
-
+  # p_legend <- df_for_legend %>%
+  #   ggplot(aes(x = st_ch_pc, y = as.factor(english))) +
+  #   stat_halfeye(fill_type = "segments", alpha = 0.3) +
+  #   stat_interval( .width = c(0.5, 0.75, 0.95)) +
+  #   #scale_y_discrete(labels = toupper) +
+  #   #scale_x_continuous(breaks = seq(-100, 100,100)) +
+  #   xlim(-60, 150)+
+  #   geom_point(data = df_for_legend, aes(x = st_pop_pc_lower, y = as.factor(english)))+
+  #   geom_point(data = df_for_legend, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
+  #   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+  #   annotate(
+  #     "richtext",
+  #     y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.9),
+  #     #x= c(-60, 65, 20, 5, 55, 45),
+  #     x= c(-10, 105, 65, 5, 55, 110),
+  #     label = c("50 % of projections <br>fall within this range",
+  #               "95 % of <br>projections",
+  #               "75 % of <br> projections",
+  #               "lower target",
+  #               "upper target",
+  #               "Distribution<br>of projections"),
+  #     fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
+  #   ) +
+  #   geom_curve(
+  #     # data = data.frame(
+  #     #    y =     c(0.9, 0.9, 0.9,   1.1, 1.82),
+  #     #    yend = c(0.98, 0.98, 0.98,  1.02, 1.82),
+  #     #    x =    c(-21, 50, 12,  40, 25),
+  #     #    xend = c(-17, 51, 14,  35, 10)),
+  #     data = data.frame(
+  #       y =    c( 0.9, 0.9),
+  #       yend = c( 0.98, 0.98),
+  #       x =    c( 60, 40),
+  #       xend = c(61, 41)),
+  #     aes(x = x, xend = xend, y = y, yend = yend),
+  #     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+  #     arrow = arrow(angle = 20, length = unit(1, "mm"))
+  #   ) + #lower target
+  #   geom_curve(
+  #     data = data.frame(
+  #       y =      1.1,
+  #       yend =  1.02,
+  #       x =     20,
+  #       xend =  25),
+  #     aes(x = x, xend = xend, y = y, yend = yend),
+  #     stat = "unique", curvature = -0.2, size = 0.2, color = "grey12",
+  #     arrow = arrow(angle = 40, length = unit(1, "mm"))
+  #   ) + #upper target
+  #   geom_curve(
+  #     data = data.frame(
+  #       y =      1.1,
+  #       yend =  1.02,
+  #       x =     40,
+  #       xend =  35),
+  #     aes(x = x, xend = xend, y = y, yend = yend),
+  #     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+  #     arrow = arrow(angle = 40, length = unit(1, "mm"))
+  #   ) + # distrbution of projections>
+  #   geom_curve(
+  #     data = data.frame(
+  #       y =     1.82,
+  #       yend =  1.82,
+  #       x =    75,
+  #       xend =  60), #60
+  #     aes(x = x, xend = xend, y = y, yend = yend),
+  #     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+  #     arrow = arrow(angle = 40, length = unit(1, "mm"))
+  #   ) + # 95% projections>
+  #   geom_curve(
+  #     data = data.frame(
+  #       y =     0.9,
+  #       yend =  0.98,
+  #       x =   90,
+  #       xend = 85), #60
+  #     aes(x = x, xend = xend, y = y, yend = yend),
+  #     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+  #     arrow = arrow(angle = 40, length = unit(1, "mm"))
+  #   )+
+  #   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+  #   # coord_flip(xlim = c(0.75, 1.3), ylim = c(0, 6000), expand = TRUE) +
+  #   guides(color = "none") +
+  #   labs(title = "Legend") +
+  #   theme_void(base_family = font_family) +
+  #   theme(plot.title = element_text(family = "Fira Sans SemiBold", size = 9,
+  #                                   hjust = 0.075),
+  #         plot.background = element_rect(color = "grey30", size = 0.2, fill = bg_color))
+  # 
+  # 
+  # #p_legend
+  # 
+  # 
+  # # Insert the custom legend into the plot
+  # #p <- p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.80, clip = FALSE)
+  # 
 
 p
 
 ggsave(plot = p, 
-       file.path(paper_filepath, "Figure6.jpg"),
+       file.path(paper_filepath, "Figure2.jpg"),
        width = 16,
-       height = 29,
+       height = 24,
        units = c("cm"),
        dpi = 300)
 
 
-if (classtype == "meet objective - high consistency") { 
-  pwidth = 30  
-  pheight = 35
-}
-
-
-ggsave(plot = p, 
-       file.path(paper_filepath, "Figure7.jpg"),
-       width = 15,
-       height = 12,
-       units = c("cm"),
-       dpi = 300)
-
-# 
 # ######################################
 # 
 # ## long term trends 
@@ -790,84 +774,4 @@ ggsave(file.path("03_summary", paste0(plottype, "_listed_sp_lt.jpg")),
 
 
 
-###########################################################
-# update output-plots
-
-library(jpeg)
-library(magrittr)
-library(dplyr)
-library(stringr)
-
-
-files <- list.files(file.path("02_outputs"), recursive = T, pattern = "plot.rds")
-
-for(i in files){
-  #i = files[1]
-  
-  filename <- str_sub(i, 1,4)
-  
-  
-  aa <-  readRDS(file.path("02_outputs", i))
-  plot(aa)
-  
-  
-  ggsave(file.path("02_outputs", filename, paste0("trend_plot_",filename, "_v2.jpg")), 
-         width = 25,
-         height = 20,
-         units = c("cm"),
-         dpi = 300)
-  
-  
-}
-
-
-
-
-
-
-
-# distribution plot for paper to demonstrate the catergories
-
-p1 <- ggplot(data = data.frame(x = c(-100, 100)), aes(x)) +
-  stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 30)) + ylab("") +
-  scale_y_continuous(breaks = NULL) +
-  scale_x_continuous(breaks = NULL) +  
-  #geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
-  theme_()
-
-
-miss <- p1 +
-  geom_vline(xintercept = 75, linetype = "longdash", linewidth = 2, color = "blue")+
-  ggtitle("Miss target - high confidence")
-
-exceed <- p1 +
-  geom_vline(xintercept = -75, linetype = "longdash", linewidth = 2, color = "blue")+
-  ggtitle("Meet target - high confidence")
-
-falling_short <- p1 +
-  geom_vline(xintercept = 25, linetype = "longdash", linewidth = 2, color = "blue")+
-  ggtitle("Miss target - low confidence")
-
-ontrack <- p1 +
-  geom_vline(xintercept = -25, linetype = "longdash", linewidth = 2, color = "blue")+
-  ggtitle("Meet target - low confidence")
-
-#  
-# ggplot(data = data.frame(x = c(-100, 100)), aes(x)) +
-#  stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 50)) + ylab("") +
-#  scale_y_continuous(breaks = NULL) +
-#  scale_x_continuous(breaks = NULL) +  
-#  #geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
-#  theme_bw()
-
-
-
-
-
-
-#  https://r-graph-gallery.com/web-ridgeline-plot-with-inside-plot-and-annotations.html
-#}
-
-
-# plots to show the distribution 
-# https://r-graph-gallery.com/web-ridgeline-plot-with-inside-plot-and-annotations.html
+#
