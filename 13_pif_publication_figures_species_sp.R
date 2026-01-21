@@ -283,7 +283,7 @@ i <- "6860/6860_outputs.rds"
     draw_plot(pb, x = .5, y = .5, width = .5, height = .5) +
     draw_plot(pc, x = 0, y = 0, width = 0.5, height = 0.5) +
     draw_plot(pd, x = 0.5, y = 0, width = 0.5, height = 0.5) +
-    draw_plot_label(label = c("a) Canada Warbler", " b) Red-headed Woodpecker", "c) Cerulean Warbler", "d) Goldern-winged Warbler"), size = 14,
+    draw_plot_label(label = c("a) Canada Warbler", " b) Red-headed Woodpecker", "c) Cerulean Warbler", "d) Golden-winged Warbler"), size = 14,
                     x = c(0.05, 0.5, 0.05, 0.5), y = c(0.99, 0.99, 0.49, 0.49))    
 
   
@@ -693,8 +693,8 @@ i <- "6860/6860_outputs.rds"
     theme(
       plot.caption.position = "plot",
       axis.text = element_text(size = 12),
-      axis.title = element_text(size = 12),
-      #axis.title.x = element_blank(),
+      #axis.title = element_text(size = 12),
+      axis.title.y = element_blank(),
       plot.title = element_text(size = 12)
     ) #+
   #  scale_x_continuous(
@@ -738,7 +738,7 @@ i <- "6860/6860_outputs.rds"
       plot.caption.position = "plot",
       axis.text = element_text(size = 12),
       axis.title = element_text(size = 12),
-      axis.title.y = element_blank(),
+      #axis.title.y = element_blank(),
       plot.title = element_text(size = 12)
     ) #+
   #  scale_x_continuous(
@@ -758,11 +758,11 @@ i <- "6860/6860_outputs.rds"
 #   
   
   fig10 <- plot_grid(pb, pa) +
-    draw_plot_label(label = c("a) Eastern Whip-poor-will", " b) Cassin's Finch"), size = 14,
+    draw_plot_label(label = c(" a) Eastern Whip-poor-will", "b) Cassin's Finch"), size = 14,
                     x = c(0.05, 0.55), y = c(0.99, 0.99 ))  
  
   ggsave(plot =  fig10, 
-         file.path(paper_filepath, "Figure10.jpg"),
+         file.path(paper_filepath, "Figure9.jpg"),
          width = 25,
          height = 15,
          units = c("cm"),

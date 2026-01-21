@@ -233,12 +233,13 @@ cat_long <- read.csv(file.path("03_summary", "overall_percentage_no_summary.csv"
 #     class == "uncertain" ~ "un"
 #   ))
 cat_long<- cat_long |> 
+  mutate(type = ifelse(type == "long-term", "longer-term", "short-term")) |>
   mutate(class = fct_relevel(class, 
                              "uncertain",
                              "miss objective - high consistency",  "miss objective - low consistency",
                              "meet objective - low consistency", "meet objective - high consistency" )) |> 
   mutate(type = fct_relevel(type, 
-                            "long-term","short-term"))
+                            "longer-term","short-term"))
 
 
 
@@ -288,7 +289,7 @@ p1
 paper_filepath <- "C:/Users/genev/OneDrive/Documents/02.Contracts/2024_ECCC_birdtrends/06.Journal_paper/Paper_tables_figures"
 
 ggsave(plot = p1, 
-       file.path(paper_filepath, "Figure1v2.jpg"),
+       file.path(paper_filepath, "Figure1.jpg"),
        width = 15,
        height = 12,
        units = c("cm"),
