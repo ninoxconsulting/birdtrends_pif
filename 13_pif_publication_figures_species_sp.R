@@ -284,7 +284,7 @@ i <- "6860/6860_outputs.rds"
     draw_plot(pc, x = 0, y = 0, width = 0.5, height = 0.5) +
     draw_plot(pd, x = 0.5, y = 0, width = 0.5, height = 0.5) +
     draw_plot_label(label = c("a) Canada Warbler", " b) Red-headed Woodpecker", "c) Cerulean Warbler", "d) Golden-winged Warbler"), size = 14,
-                    x = c(0.05, 0.5, 0.05, 0.5), y = c(0.99, 0.99, 0.49, 0.49))    
+                    x = c(0.01, 0.42, 0.01, 0.42), y = c(0.99, 0.99, 0.49, 0.49))    
 
   
   fig4

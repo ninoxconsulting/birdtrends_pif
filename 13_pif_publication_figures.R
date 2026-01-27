@@ -604,107 +604,107 @@ p <- df %>%
 
 
 #if(classtype == "meet objective - high consistency"){
-  #if(plottype == "red"){
+#if(plottype == "red"){
 
-  # p_legend <- df_for_legend %>%
-  #   ggplot(aes(x = st_ch_pc, y = as.factor(english))) +
-  #   stat_halfeye(fill_type = "segments", alpha = 0.3) +
-  #   stat_interval( .width = c(0.5, 0.75, 0.95)) +
-  #   #scale_y_discrete(labels = toupper) +
-  #   #scale_x_continuous(breaks = seq(-100, 100,100)) +
-  #   xlim(-60, 150)+
-  #   geom_point(data = df_for_legend, aes(x = st_pop_pc_lower, y = as.factor(english)))+
-  #   geom_point(data = df_for_legend, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
-  #   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-  #   annotate(
-  #     "richtext",
-  #     y = c(0.93, 0.9, 0.9, 1.18, 1.18, 1.9),
-  #     #x= c(-60, 65, 20, 5, 55, 45),
-  #     x= c(-10, 105, 65, 5, 55, 110),
-  #     label = c("50 % of projections <br>fall within this range",
-  #               "95 % of <br>projections",
-  #               "75 % of <br> projections",
-  #               "lower target",
-  #               "upper target",
-  #               "Distribution<br>of projections"),
-  #     fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
-  #   ) +
-  #   geom_curve(
-  #     # data = data.frame(
-  #     #    y =     c(0.9, 0.9, 0.9,   1.1, 1.82),
-  #     #    yend = c(0.98, 0.98, 0.98,  1.02, 1.82),
-  #     #    x =    c(-21, 50, 12,  40, 25),
-  #     #    xend = c(-17, 51, 14,  35, 10)),
-  #     data = data.frame(
-  #       y =    c( 0.9, 0.9),
-  #       yend = c( 0.98, 0.98),
-  #       x =    c( 60, 40),
-  #       xend = c(61, 41)),
-  #     aes(x = x, xend = xend, y = y, yend = yend),
-  #     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-  #     arrow = arrow(angle = 20, length = unit(1, "mm"))
-  #   ) + #lower target
-  #   geom_curve(
-  #     data = data.frame(
-  #       y =      1.1,
-  #       yend =  1.02,
-  #       x =     20,
-  #       xend =  25),
-  #     aes(x = x, xend = xend, y = y, yend = yend),
-  #     stat = "unique", curvature = -0.2, size = 0.2, color = "grey12",
-  #     arrow = arrow(angle = 40, length = unit(1, "mm"))
-  #   ) + #upper target
-  #   geom_curve(
-  #     data = data.frame(
-  #       y =      1.1,
-  #       yend =  1.02,
-  #       x =     40,
-  #       xend =  35),
-  #     aes(x = x, xend = xend, y = y, yend = yend),
-  #     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-  #     arrow = arrow(angle = 40, length = unit(1, "mm"))
-  #   ) + # distrbution of projections>
-  #   geom_curve(
-  #     data = data.frame(
-  #       y =     1.82,
-  #       yend =  1.82,
-  #       x =    75,
-  #       xend =  60), #60
-  #     aes(x = x, xend = xend, y = y, yend = yend),
-  #     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-  #     arrow = arrow(angle = 40, length = unit(1, "mm"))
-  #   ) + # 95% projections>
-  #   geom_curve(
-  #     data = data.frame(
-  #       y =     0.9,
-  #       yend =  0.98,
-  #       x =   90,
-  #       xend = 85), #60
-  #     aes(x = x, xend = xend, y = y, yend = yend),
-  #     stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
-  #     arrow = arrow(angle = 40, length = unit(1, "mm"))
-  #   )+
-  #   scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
-  #   # coord_flip(xlim = c(0.75, 1.3), ylim = c(0, 6000), expand = TRUE) +
-  #   guides(color = "none") +
-  #   labs(title = "Legend") +
-  #   theme_void(base_family = font_family) +
-  #   theme(plot.title = element_text(family = "Fira Sans SemiBold", size = 9,
-  #                                   hjust = 0.075),
-  #         plot.background = element_rect(color = "grey30", size = 0.2, fill = bg_color))
-  # 
-  # 
-  # #p_legend
-  # 
-  # 
-  # # Insert the custom legend into the plot
-  # #p <- p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.80, clip = FALSE)
-  # 
+  p_legend <- df_for_legend %>%
+    ggplot(aes(x = st_ch_pc, y = as.factor(english))) +
+    stat_halfeye(fill_type = "segments", alpha = 0.3) +
+    stat_interval( .width = c(0.5, 0.75, 0.95)) +
+    #scale_y_discrete(labels = toupper) +
+    #scale_x_continuous(breaks = seq(-100, 100,100)) +
+    xlim(-60, 150)+
+    geom_point(data = df_for_legend, aes(x = st_pop_pc_lower, y = as.factor(english)))+
+    geom_point(data = df_for_legend, aes(x = st_pop_pc_uppper, y = as.factor(english)))+
+    scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+    annotate(
+      "richtext",
+      y = c(0.93, 0.7, 0.5, 1.5, 1.4, 1.9),
+      #x= c(-60, 65, 20, 5, 55, 45),
+      x= c(-10, 105, 65, 5, 55, 120),
+      label = c("50 % of projections <br>fall within this range",
+                "95 % of <br>projections",
+                "75 % of <br> projections",
+                "lower target",
+                "upper target",
+                "Distribution<br>of projections"),
+      fill = NA, label.size = NA, family = font_family, size = 3, vjust = 1,
+    ) +
+    geom_curve(
+      # data = data.frame(
+      #    y =     c(0.9, 0.9, 0.9,   1.1, 1.82),
+      #    yend = c(0.98, 0.98, 0.98,  1.02, 1.82),
+      #    x =    c(-21, 50, 12,  40, 25),
+      #    xend = c(-17, 51, 14,  35, 10)),
+      data = data.frame(
+        y =    c( 0.9, 0.9),
+        yend = c( 0.98, 0.98),
+        x =    c( 60, 40),
+        xend = c(61, 41)),
+      aes(x = x, xend = xend, y = y, yend = yend),
+      stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+      arrow = arrow(angle = 20, length = unit(1, "mm"))
+    ) + #lower target
+    geom_curve(
+      data = data.frame(
+        y =      1.1,
+        yend =  1.02,
+        x =     20,
+        xend =  25),
+      aes(x = x, xend = xend, y = y, yend = yend),
+      stat = "unique", curvature = -0.2, size = 0.2, color = "grey12",
+      arrow = arrow(angle = 40, length = unit(1, "mm"))
+    ) + #upper target
+    geom_curve(
+      data = data.frame(
+        y =      1.1,
+        yend =  1.02,
+        x =     40,
+        xend =  35),
+      aes(x = x, xend = xend, y = y, yend = yend),
+      stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+      arrow = arrow(angle = 40, length = unit(1, "mm"))
+    ) + # distrbution of projections>
+    geom_curve(
+      data = data.frame(
+        y =     1.82,
+        yend =  1.82,
+        x =    75,
+        xend =  60), #60
+      aes(x = x, xend = xend, y = y, yend = yend),
+      stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+      arrow = arrow(angle = 40, length = unit(1, "mm"))
+    ) + # 95% projections>
+    geom_curve(
+      data = data.frame(
+        y =     0.9,
+        yend =  0.98,
+        x =   90,
+        xend = 85), #60
+      aes(x = x, xend = xend, y = y, yend = yend),
+      stat = "unique", curvature = 0.2, size = 0.2, color = "grey12",
+      arrow = arrow(angle = 40, length = unit(1, "mm"))
+    )+
+    scale_color_manual(values = MetBrewer::met.brewer("VanGogh3")) +
+    # coord_flip(xlim = c(0.75, 1.3), ylim = c(0, 6000), expand = TRUE) +
+    guides(color = "none") +
+    labs(title = "Legend") +
+    theme_void(base_family = font_family) +
+    theme(plot.title = element_text(family = "Fira Sans SemiBold", size = 9,
+                                    hjust = 0.075),
+          plot.background = element_rect(color = "grey30", size = 0.2, fill = bg_color))
+
+
+  p_legend
+
+
+  # Insert the custom legend into the plot
+  p <- p + inset_element(p_legend, l = 0.65, r = 1.0,  t = 0.99, b = 0.80, clip = FALSE)
+
 
 p
 
 ggsave(plot = p, 
-       file.path(paper_filepath, "Figure2.jpg"),
+       file.path(paper_filepath, "Figure2_inset.jpg"),
        width = 16,
        height = 24,
        units = c("cm"),
